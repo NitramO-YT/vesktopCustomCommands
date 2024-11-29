@@ -1,0 +1,1 @@
+console.log("[vesktopCustomCommands] Injection attempt...");try {require(__dirname + '/vesktopCustomCommands/customCode.js');console.log("[vesktopCustomCommands] Injection successful!");} catch (error) {console.error("[vesktopCustomCommands] Injection failed: ", error);};
