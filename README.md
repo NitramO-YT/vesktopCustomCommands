@@ -21,7 +21,7 @@ You need to configure a custom global shortcut in your system to call the script
 ## Automatic installation
 Run this command in your terminal and follow the instructions:
 ```bash
-curl -sL https://raw.githubusercontent.com/NitramO-YT/vesktopCustomCommands/main/install.sh | bash
+bash -c "$(curl -sS https://raw.githubusercontent.com/NitramO-YT/vesktopCustomCommands/refs/heads/main/install.sh"
 ```
 
 ## Manual installation

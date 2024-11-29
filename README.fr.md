@@ -24,7 +24,7 @@ Vous devez configurer un raccourci global personnalisé dans votre système pour
 ## Installation automatique
 Exécutez cette commande dans votre terminal et suivez les instructions :
 ```bash
-curl -sL https://raw.githubusercontent.com/NitramO-YT/vesktopCustomCommands/main/install.sh | bash
+bash -c "$(curl -sS https://raw.githubusercontent.com/NitramO-YT/vesktopCustomCommands/refs/heads/main/install.sh"
 ```
 
 ## Installation manuelle

@@ -51,39 +51,6 @@ if [[ ! $REPLY =~ ^[Yy]$ ]]; then
     echo "    - 'deafen.sh' to deafen yourself. '~/.vesktopCustomCommands/deafen.sh'"
     echo "11. Enjoy your new global shortcuts to mute and deafen yourself!"
 
-
-
-
-
-# 1. Download the `dist` folder from the repository or its content.
-# 2. `dist` is separated in two parts:
-#     - `vencord` folder contains the files to inject in the Vencord preload file.
-#     - `vesktopCustomCommands` folder contains the scripts to mute/deafen and the `.config` file.
-# 3. You can make a backup of your Vencord preload file (usually located in `~/.config/Vencord/dist/vencordDesktopPreload.js` so `cp ~/.config/Vencord/dist/vencordDesktopPreload.js ~/.config/Vencord/dist/vencordDesktopPreload.js.bak`) or not, if you want to restore it later you can delete the file and start Vesktop to recreate it.
-# 4. Either inject the content of `vencordDesktopPreload_sample.js` between the line:
-#    ```javascript
-#    document.addEventListener("DOMContentLoaded",()=>{
-#    ```
-#    and
-#    ```javascript
-#    document.documentElement.appendChild(r)},{once:!0})
-#    ```
-#    in your Vencord preload file (usually located in `~/.config/Vencord/dist/vencordDesktopPreload.js`) or replace it with the content of `vencordDesktopPreload.js` (*NOT RECOMMENDED, as in the event of a Vesktop update, if VCC has not been updated since then, it is less reliable, and this file may be obsolete*.).
-# 5. Make a dir `vesktopCustomCommands` in your Vencord path (usually located in `~/.config/Vencord/dist/`) and put the file `customCode.js` in it.
-# 6. Make a dir `~/.vesktopCustomCommands` and put the files `mute.sh` and `deafen.sh` in it.
-# 7. Add permissions to the scripts `mute.sh` and `deafen.sh`:
-#     ```bash
-#     chmod +x ~/.vesktopCustomCommands/mute.sh
-#     chmod +x ~/.vesktopCustomCommands/deafen.sh
-#     ```
-# 8. Put the `.config` file in `~/.vesktopCustomCommands` and update the `vencord_path` variable with your Vencord path if needed.
-# 9. Restart Vesktop to apply the changes.
-# 10. Configure a custom global shortcut in your system to call the scripts `mute.sh` and `deafen.sh` in `~/.vesktopCustomCommands/` folder.
-#     - `mute.sh` to mute yourself. `~/.vesktopCustomCommands/mute.sh`
-#     - `deafen.sh` to deafen yourself. `~/.vesktopCustomCommands/deafen.sh`
-# 11. Enjoy your new global shortcuts to mute and deafen yourself!
-
-
     exit 0
 fi
 
