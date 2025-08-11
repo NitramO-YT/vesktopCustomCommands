@@ -46,14 +46,14 @@ Lors de l’installation, vous pouvez activer un système d’auto-repatch qui v
   ```bash
   bash -c "$(curl -fsSL https://raw.githubusercontent.com/NitramO-YT/vesktopCustomCommands/refs/heads/main/dist/vesktopCustomCommands/disable_autorepatch.sh)"
   ```
- - Pour activer l’auto‑restart (après repatch) :
-   ```bash
-   bash -c "$(curl -fsSL https://raw.githubusercontent.com/NitramO-YT/vesktopCustomCommands/refs/heads/main/dist/vesktopCustomCommands/enable_autorestart.sh)"
-   ```
- - Pour désactiver l’auto‑restart :
-   ```bash
-   bash -c "$(curl -fsSL https://raw.githubusercontent.com/NitramO-YT/vesktopCustomCommands/refs/heads/main/dist/vesktopCustomCommands/disable_autorestart.sh)"
-   ```
+  - Pour activer l’auto‑restart (après repatch) :
+  ```bash
+  bash -c "$(curl -fsSL https://raw.githubusercontent.com/NitramO-YT/vesktopCustomCommands/refs/heads/main/dist/vesktopCustomCommands/enable_autorestart.sh)"
+  ```
+  - Pour désactiver l’auto‑restart :
+  ```bash
+  bash -c "$(curl -fsSL https://raw.githubusercontent.com/NitramO-YT/vesktopCustomCommands/refs/heads/main/dist/vesktopCustomCommands/disable_autorestart.sh)"
+  ```
   
 
 Configuration manuelle : éditez `~/.vesktopCustomCommands/.config` et définissez `auto_repatch`/`auto_restart`. Vous pouvez aussi régler `autorepatch_interval` sur `"30s"`, `"1m"` ou `"3m"`. Si vous le désactivez manuellement, le timer sera stoppé au prochain passage de l’installateur, ou utilisez le script ci-dessus.
