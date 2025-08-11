@@ -40,10 +40,10 @@ Lors de l’installation, vous pouvez activer un système d’auto-repatch qui v
 - Un timer `systemd` utilisateur s’exécute à l’intervalle choisi lorsque `auto_repatch` est activé.
 - Vous pouvez l’activer/désactiver plus tard avec :
   ```bash
-  bash -c "$(curl -fsSL https://raw.githubusercontent.com/NitramO-YT/vesktopCustomCommands/refs/heads/main/src/vesktopCustomCommands/enable_autorepatch.sh)"
+  bash -c "$(curl -fsSL https://raw.githubusercontent.com/NitramO-YT/vesktopCustomCommands/refs/heads/main/dist/vesktopCustomCommands/enable_autorepatch.sh)"
   ```
   ```bash
-  bash -c "$(curl -fsSL https://raw.githubusercontent.com/NitramO-YT/vesktopCustomCommands/refs/heads/main/src/vesktopCustomCommands/disable_autorepatch.sh)"
+  bash -c "$(curl -fsSL https://raw.githubusercontent.com/NitramO-YT/vesktopCustomCommands/refs/heads/main/dist/vesktopCustomCommands/disable_autorepatch.sh)"
   ```
 
 Configuration manuelle : éditez `~/.vesktopCustomCommands/.config` et définissez `auto_repatch`/`auto_restart`. Vous pouvez aussi régler `autorepatch_interval` sur `"30s"`, `"1m"` ou `"3m"`. Si vous le désactivez manuellement, le timer sera stoppé au prochain passage de l’installateur, ou utilisez le script ci-dessus.
@@ -57,10 +57,10 @@ Vous pouvez activer un système d’auto-update qui vérifie régulièrement si 
   - `auto_update_interval` (par défaut : `15m`) – le timer s’exécute avec `autorepatch_interval` si l’auto-repatch est activé, sinon avec `auto_update_interval` si seul l’auto-update est activé.
 - Activer/désactiver par la suite :
   ```bash
-  bash -c "$(curl -fsSL https://raw.githubusercontent.com/NitramO-YT/vesktopCustomCommands/refs/heads/main/src/vesktopCustomCommands/enable_autoupdate.sh)"
+  bash -c "$(curl -fsSL https://raw.githubusercontent.com/NitramO-YT/vesktopCustomCommands/refs/heads/main/dist/vesktopCustomCommands/enable_autoupdate.sh)"
   ```
   ```bash
-  bash -c "$(curl -fsSL https://raw.githubusercontent.com/NitramO-YT/vesktopCustomCommands/refs/heads/main/src/vesktopCustomCommands/disable_autoupdate.sh)"
+  bash -c "$(curl -fsSL https://raw.githubusercontent.com/NitramO-YT/vesktopCustomCommands/refs/heads/main/dist/vesktopCustomCommands/disable_autoupdate.sh)"
   ```
 
 ## Installation manuelle

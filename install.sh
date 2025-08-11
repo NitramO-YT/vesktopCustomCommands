@@ -156,14 +156,16 @@ VCC_CONFIG_PATH="${VCC_PATH}.config"
 REPOSITORY_SOURCE="https://raw.githubusercontent.com/"
 VCC_REPOSITORY_USER="NitramO-YT"
 VCC_REPOSITORY_NAME="vesktopCustomCommands"
+VCC_REPOSITORY_REFS="refs/heads"
 VCC_REPOSITORY_BRANCH="main"
+VCC_REPOSITORY_BASE_REFS="${REPOSITORY_SOURCE}${VCC_REPOSITORY_USER}/${VCC_REPOSITORY_NAME}/${VCC_REPOSITORY_REFS}/${VCC_REPOSITORY_BRANCH}/"
 VCC_REPOSITORY_BASE="${REPOSITORY_SOURCE}${VCC_REPOSITORY_USER}/${VCC_REPOSITORY_NAME}/${VCC_REPOSITORY_BRANCH}/"
 VCC_REPOSITORY_DIST="${VCC_REPOSITORY_BASE}dist/"
 
 VCC_REPOSITORY_VENCORD_PATH="${VCC_REPOSITORY_DIST}vencord/"
-# Preload reference files are stored under src in the repository
-VCC_REPOSITORY_VENCORD_PRELOAD_FILE="${VCC_REPOSITORY_BASE}src/vencord/vencordDesktopPreload.js"
-VCC_REPOSITORY_VENCORD_PRELOAD_FILE_SAMPLE="${VCC_REPOSITORY_BASE}src/vencord/vencordDesktopPreload_sample.js"
+# Preload reference files are stored under dist in the repository
+VCC_REPOSITORY_VENCORD_PRELOAD_FILE="${VCC_REPOSITORY_VENCORD_PATH}vencordDesktopPreload.js"
+VCC_REPOSITORY_VENCORD_PRELOAD_FILE_SAMPLE="${VCC_REPOSITORY_VENCORD_PATH}vencordDesktopPreload_sample.js"
 VCC_REPOSITORY_VCC_CUSTOM_CODE_FILE="${VCC_REPOSITORY_VENCORD_PATH}customCode.js"
 
 VCC_REPOSITORY_VCC_PATH="${VCC_REPOSITORY_DIST}vesktopCustomCommands/"
@@ -404,7 +406,7 @@ is_patched() {
 
 patch_preload() {
   local preload_file="$1"
-  local sample_url="https://raw.githubusercontent.com/NitramO-YT/vesktopCustomCommands/main/src/vencord/vencordDesktopPreload_sample.js"
+  local sample_url="https://raw.githubusercontent.com/NitramO-YT/vesktopCustomCommands/main/dist/vencord/vencordDesktopPreload_sample.js"
   CODE_TO_INJECT=$(curl -s -w "%{http_code}" "$sample_url") || return 1
   HTTP_RESPONSE="${CODE_TO_INJECT: -3}"; CODE_TO_INJECT="${CODE_TO_INJECT%???}"
   if [ "$HTTP_RESPONSE" -ne 200 ] || [ -z "$CODE_TO_INJECT" ]; then
@@ -516,7 +518,7 @@ is_patched() {
 
 patch_preload() {
   local preload_file="$1"
-  local sample_url="https://raw.githubusercontent.com/NitramO-YT/vesktopCustomCommands/main/src/vencord/vencordDesktopPreload_sample.js"
+  local sample_url="https://raw.githubusercontent.com/NitramO-YT/vesktopCustomCommands/main/dist/vencord/vencordDesktopPreload_sample.js"
   CODE_TO_INJECT=$(curl -s -w "%{http_code}" "$sample_url") || return 1
   HTTP_RESPONSE="${CODE_TO_INJECT: -3}"; CODE_TO_INJECT="${CODE_TO_INJECT%???}"
   if [ "$HTTP_RESPONSE" -ne 200 ] || [ -z "$CODE_TO_INJECT" ]; then
