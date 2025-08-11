@@ -35,16 +35,26 @@ Lors de l’installation, vous pouvez activer un système d’auto-repatch qui v
 - Pourquoi en a-t-on besoin ? Les mises à jour de Vesktop/Vencord ou certains scénarios de démarrage peuvent restaurer le fichier de préchargement dans son état d’origine, supprimant l’injection VCC. L’auto-repatch garantit que vos raccourcis continuent de fonctionner sans intervention manuelle.
 - Les paramètres sont dans `~/.vesktopCustomCommands/.config` :
   - `auto_repatch="true|false"` (par défaut : `false`)
-  - `auto_restart="true|false"` (par défaut : `false`) – si activé, Vesktop sera automatiquement relancé après un repatch.
+  - `auto_restart="true|false"` (par défaut : `false`) – si activé, Vesktop sera automatiquement relancé après un repatch. Vous pouvez l’activer/désactiver ensuite avec les commandes ci‑dessous.
   - `autorepatch_interval="30s|1m|3m"` (par défaut : `30s`) – intervalle de vérification.
-- Un timer `systemd` utilisateur s’exécute à l’intervalle choisi lorsque `auto_repatch` est activé.
-- Vous pouvez l’activer/désactiver plus tard avec :
+  - Un timer `systemd` utilisateur s’exécute à l’intervalle choisi lorsque `auto_repatch` est activé.
+  - Pour activer les repatch automatiques :
   ```bash
   bash -c "$(curl -fsSL https://raw.githubusercontent.com/NitramO-YT/vesktopCustomCommands/refs/heads/main/dist/vesktopCustomCommands/enable_autorepatch.sh)"
   ```
+  - Pour désactiver les repatch automatiques :
   ```bash
   bash -c "$(curl -fsSL https://raw.githubusercontent.com/NitramO-YT/vesktopCustomCommands/refs/heads/main/dist/vesktopCustomCommands/disable_autorepatch.sh)"
   ```
+ - Pour activer l’auto‑restart (après repatch) :
+   ```bash
+   bash -c "$(curl -fsSL https://raw.githubusercontent.com/NitramO-YT/vesktopCustomCommands/refs/heads/main/dist/vesktopCustomCommands/enable_autorestart.sh)"
+   ```
+ - Pour désactiver l’auto‑restart :
+   ```bash
+   bash -c "$(curl -fsSL https://raw.githubusercontent.com/NitramO-YT/vesktopCustomCommands/refs/heads/main/dist/vesktopCustomCommands/disable_autorestart.sh)"
+   ```
+  
 
 Configuration manuelle : éditez `~/.vesktopCustomCommands/.config` et définissez `auto_repatch`/`auto_restart`. Vous pouvez aussi régler `autorepatch_interval` sur `"30s"`, `"1m"` ou `"3m"`. Si vous le désactivez manuellement, le timer sera stoppé au prochain passage de l’installateur, ou utilisez le script ci-dessus.
 
@@ -55,10 +65,11 @@ Vous pouvez activer un système d’auto-update qui vérifie régulièrement si 
 - Paramètres dans `~/.vesktopCustomCommands/.config` :
   - `auto_update="true|false"` (par défaut : `false`)
   - `auto_update_interval` (par défaut : `15m`) – le timer s’exécute avec `autorepatch_interval` si l’auto-repatch est activé, sinon avec `auto_update_interval` si seul l’auto-update est activé.
-- Activer/désactiver par la suite :
+- Pour activer les mises à jours automatiques :
   ```bash
   bash -c "$(curl -fsSL https://raw.githubusercontent.com/NitramO-YT/vesktopCustomCommands/refs/heads/main/dist/vesktopCustomCommands/enable_autoupdate.sh)"
   ```
+- Pour désactiver les mises à jours automatiques :
   ```bash
   bash -c "$(curl -fsSL https://raw.githubusercontent.com/NitramO-YT/vesktopCustomCommands/refs/heads/main/dist/vesktopCustomCommands/disable_autoupdate.sh)"
   ```
@@ -73,7 +84,7 @@ Vous pouvez activer un système d’auto-update qui vérifie régulièrement si 
    cp ~/.config/Vencord/dist/vencordDesktopPreload.js ~/.config/Vencord/dist/vencordDesktopPreload.js.bak
    ```
    Si vous souhaitez restaurer ce fichier plus tard, vous pouvez simplement le supprimer et redémarrer Vesktop pour qu'il soit recréé.
-4. Soit injectez le contenu de `vencordDesktopPreload_sample.js` dans votre fichier de préchargement Vencord (généralement situé dans `~/.config/Vencord/dist/vencordDesktopPreload.js`) en remplaçant la ligne `document.addEventListener("DOMContentLoaded",()=>document.documentElement.appendChild(r),{once:!0})` par `document.addEventListener("DOMContentLoaded",()=>document.documentElement.appendChild(r);(CONTENU DU FICHIER D'EXTRAIT DE PRÉCHARGEMENT ICI),{once:!0})` et remplacez `(CONTENU DU FICHIER D'EXTRAIT DE PRÉCHARGEMENT ICI)` par le contenu de `vencordDesktopPreload_sample.js`, soit remplacez le fichier entier par le fichier `vencordDesktopPreload.js` fourni (*NON RECOMMANDÉ, car en cas de mise à jour de Vesktop, si VCC n'a pas été mis à jour depuis, c'est moins fiable et il est possible que ce fichier soit obsolète.*).
+4. Soit injectez le contenu de `vencordDesktopPreload_sample.js` dans votre fichier de préchargement Vencord (généralement situé dans `~/.config/Vencord/dist/vencordDesktopPreload.js`) en remplaçant la ligne `document.addEventListener("DOMContentLoaded",()=>document.documentElement.appendChild(r),{once:!0})` par `document.addEventListener("DOMContentLoaded",()=>{document.documentElement.appendChild(r);(CONTENU DU FICHIER D'EXTRAIT DE PRÉCHARGEMENT ICI)},{once:!0})` et remplacez `(CONTENU DU FICHIER D'EXTRAIT DE PRÉCHARGEMENT ICI)` par le contenu de `vencordDesktopPreload_sample.js`, soit remplacez le fichier entier par le fichier `vencordDesktopPreload.js` fourni (*NON RECOMMANDÉ, car en cas de mise à jour de Vesktop, si VCC n'a pas été mis à jour depuis, c'est moins fiable et il est possible que ce fichier soit obsolète.*).
 5. Créez un dossier `vesktopCustomCommands` dans le chemin de Vencord (généralement situé dans `~/.config/Vencord/dist/`) et placez-y le fichier `customCode.js`.
 6. Créez un dossier `~/.vesktopCustomCommands` et placez-y les fichiers `mute.sh` et `deafen.sh`.
 7. Ajoutez les permissions nécessaires aux scripts `mute.sh` et `deafen.sh` :
@@ -102,7 +113,7 @@ Lors de la désinstallation, il vous sera demandé si vous souhaitez TOUT suppri
 - Répondez « y » : tous les fichiers et paramètres sont supprimés.
 - Répondez « n » : seuls les fichiers du programme sont supprimés ; votre `.config` est conservé.
 
-Si les paramètres sont supprimés, le service/timer d’auto-repatch et les scripts associés sont également supprimés.
+ Si les paramètres sont supprimés, le service/timer d’auto-repatch et les scripts associés sont également supprimés. Si vous refusez la désinstallation automatique, suivez les étapes de la désinstallation manuelle ci‑dessous (les mêmes instructions sont aussi affichées par le script).
 
 ## Désinstallation manuelle
 

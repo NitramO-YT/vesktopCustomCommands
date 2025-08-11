@@ -10,29 +10,36 @@ normalizePath() {
     fi
 }
 
+# Detect Vesktop variant and prepare restart command
 detect_vesktop() {
     DETECTED=""
     START_CMD=""
     KILL_CMD=""
+    RUNNING="false"
 
+    # Prefer explicit flatpak if present
     if command -v flatpak >/dev/null 2>&1; then
         if flatpak info dev.vencord.Vesktop >/dev/null 2>&1 || flatpak ps 2>/dev/null | grep -q dev.vencord.Vesktop; then
             DETECTED="flatpak"
             FP_BIN="$(command -v flatpak)"
             ARCH="$(uname -m)"
-            START_CMD="$FP_BIN run --branch=stable --arch=$ARCH --command=startvesktop --file-forwarding dev.vencord.Vesktop @@u %U @@"
+            START_CMD="$FP_BIN run dev.vencord.Vesktop"
             KILL_CMD="$FP_BIN kill dev.vencord.Vesktop || pkill -f dev.vencord.Vesktop || true"
+            if flatpak ps 2>/dev/null | grep -q dev.vencord.Vesktop; then RUNNING="true"; fi
             return
         fi
     fi
 
+    # System package (vesktop in PATH)
     if command -v vesktop >/dev/null 2>&1; then
         DETECTED="system"
         START_CMD="vesktop"
         KILL_CMD="pkill -x vesktop || pkill -f vesktop || true"
+        if pgrep -x vesktop >/dev/null 2>&1 || pgrep -f '[Vv]esktop' >/dev/null 2>&1; then RUNNING="true"; fi
         return
     fi
 
+    # Fallback: detect a running AppImage/tarball by PID and reuse its path
     PID="$(pgrep -f -n '[Vv]esktop' || true)"
     if [ -n "$PID" ] && [ -r "/proc/$PID/exe" ]; then
         EXE_PATH="$(readlink -f "/proc/$PID/exe" || true)"
@@ -40,6 +47,7 @@ detect_vesktop() {
             DETECTED="path"
             START_CMD="$EXE_PATH"
             KILL_CMD="kill $PID || true"
+            RUNNING="true"
             return
         fi
     fi
@@ -49,25 +57,51 @@ offer_restart_vesktop() {
     detect_vesktop
     if [ -n "$DETECTED" ]; then
         echo "We detected Vesktop variant: $DETECTED"
-        read -p 'Do you want us to restart Vesktop now? (y/n) ' -n 1 -r
-        echo
-        if [[ $REPLY =~ ^[Yy]$ ]]; then
-            eval "$KILL_CMD"
-            sleep 1
-            nohup bash -c "$START_CMD" >/dev/null 2>&1 &
-            disown
-            echo 'Vesktop was restarted successfully.'
-            return
+        if [ "$RUNNING" = "true" ]; then
+            read -p 'Vesktop is running. Do you want us to restart it now? (y/n) ' -n 1 -r
+            echo
+            if [[ $REPLY =~ ^[Yy]$ ]]; then
+                eval "$KILL_CMD"
+                sleep 1
+            nohup bash -c "$START_CMD" >/dev/null 2>&1 & disown
+                echo 'Vesktop was restarted successfully.'
+                return
+            else
+                echo 'You can restart Vesktop manually to apply the changes.'
+                return
+            fi
+        else
+            read -p 'Vesktop is not running. Do you want us to start it now? (y/n) ' -n 1 -r
+            echo
+            if [[ $REPLY =~ ^[Yy]$ ]]; then
+                nohup bash -c "$START_CMD" >/dev/null 2>&1 & disown
+                echo 'Vesktop was started successfully.'
+                return
+            else
+                echo 'You can start Vesktop to apply and see the changes.'
+                return
+            fi
         fi
     fi
-    echo 'You may restart Vesktop to ensure changes are applied.'
+    echo '⚠️ Please (re)start Vesktop to apply the changes'
 }
 
 echo "This script will uninstall vesktopCustomCommands (VCC) from your system."
 read -p 'Do you want to proceed with the uninstallation? (y/n) ' -n 1 -r
 echo
 if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-    echo "Uninstallation cancelled."
+    echo "For a manual uninstallation, please follow these steps:" 
+    echo "1. Remove the custom global shortcuts in your system that call the scripts 'mute.sh' and 'deafen.sh' in '~/.vesktopCustomCommands/'."
+    echo "2. Remove the '.config' file located in '~/.vesktopCustomCommands/'."
+    echo "3. Remove the '~/.vesktopCustomCommands' folder."
+    echo "4. Remove the 'customCode.js' file from your Vencord path (usually '~/.config/Vencord/dist/vesktopCustomCommands/')."
+    echo "5. Remove the 'vesktopCustomCommands' folder from your Vencord path (usually '~/.config/Vencord/dist/')."
+    echo "6. Remove the injected code in your Vencord preload file (usually '~/.config/Vencord/dist/vencordDesktopPreload.js') or restore your backup."
+    echo "   Tip: you can also delete the preload file and start Vesktop to recreate it automatically."
+    echo "7. Restart Vesktop to apply the changes."
+    echo "Note: If you had enabled auto-repatch/auto-update, you may also disable the user systemd timer with:"
+    echo "   systemctl --user disable --now vcc-autorepatch.timer"
+    echo "   systemctl --user disable --now vcc-autorepatch.service"
     exit 0
 fi
 
@@ -181,6 +215,9 @@ if [ "$REMOVE_SETTINGS" = true ]; then
         systemctl --user disable --now vcc-autorepatch.service 2>/dev/null || true
     fi
     rm -f "$HOME/.config/systemd/user/vcc-autorepatch.timer" "$HOME/.config/systemd/user/vcc-autorepatch.service"
+    # Nettoyer le lock runtime au cas où
+    RUNTIME_DIR="${XDG_RUNTIME_DIR:-/tmp}"
+    rm -f "$RUNTIME_DIR/vcc/VCC_Autorepatch.lock" 2>/dev/null || true
 fi
 
 exit 0

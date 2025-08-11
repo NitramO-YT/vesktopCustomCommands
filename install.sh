@@ -33,6 +33,7 @@ detect_vesktop() {
     DETECTED=""
     START_CMD=""
     KILL_CMD=""
+    RUNNING="false"
 
     # Prefer explicit flatpak if present
     if command -v flatpak >/dev/null 2>&1; then
@@ -40,8 +41,9 @@ detect_vesktop() {
             DETECTED="flatpak"
             FP_BIN="$(command -v flatpak)"
             ARCH="$(uname -m)"
-            START_CMD="$FP_BIN run --branch=stable --arch=$ARCH --command=startvesktop --file-forwarding dev.vencord.Vesktop @@u %U @@"
+            START_CMD="$FP_BIN run dev.vencord.Vesktop"
             KILL_CMD="$FP_BIN kill dev.vencord.Vesktop || pkill -f dev.vencord.Vesktop || true"
+            if flatpak ps 2>/dev/null | grep -q dev.vencord.Vesktop; then RUNNING="true"; fi
             return
         fi
     fi
@@ -51,6 +53,7 @@ detect_vesktop() {
         DETECTED="system"
         START_CMD="vesktop"
         KILL_CMD="pkill -x vesktop || pkill -f vesktop || true"
+        if pgrep -x vesktop >/dev/null 2>&1 || pgrep -f '[Vv]esktop' >/dev/null 2>&1; then RUNNING="true"; fi
         return
     fi
 
@@ -62,6 +65,7 @@ detect_vesktop() {
             DETECTED="path"
             START_CMD="$EXE_PATH"
             KILL_CMD="kill $PID || true"
+            RUNNING="true"
             return
         fi
     fi
@@ -71,18 +75,33 @@ offer_restart_vesktop() {
     detect_vesktop
     if [ -n "$DETECTED" ]; then
         echo "We detected Vesktop variant: $DETECTED"
-        read -p 'Do you want us to restart Vesktop now? (y/n) ' -n 1 -r
-        echo
-        if [[ $REPLY =~ ^[Yy]$ ]]; then
-            eval "$KILL_CMD"
-            sleep 1
-            nohup bash -c "$START_CMD" >/dev/null 2>&1 &
-            disown
-            echo 'Vesktop was restarted successfully.'
-            return
+        if [ "$RUNNING" = "true" ]; then
+            read -p 'Vesktop is running. Do you want us to restart it now? (y/n) ' -n 1 -r
+            echo
+            if [[ $REPLY =~ ^[Yy]$ ]]; then
+                eval "$KILL_CMD"
+                sleep 1
+            nohup bash -c "$START_CMD" >/dev/null 2>&1 & disown
+                echo 'Vesktop was restarted successfully.'
+                return
+            else
+                echo 'You can restart Vesktop manually to apply the changes.'
+                return
+            fi
+        else
+            read -p 'Vesktop is not running. Do you want us to start it now? (y/n) ' -n 1 -r
+            echo
+            if [[ $REPLY =~ ^[Yy]$ ]]; then
+                nohup bash -c "$START_CMD" >/dev/null 2>&1 & disown
+                echo 'Vesktop was started successfully.'
+                return
+            else
+                echo 'You can start Vesktop to apply and see the changes.'
+                return
+            fi
         fi
     fi
-    echo '⚠️ Please restart Vesktop to apply the changes'
+    echo '⚠️ Please (re)start Vesktop to apply the changes'
 }
 
 # Ask to the user if he accepts the automatic installation
@@ -277,6 +296,8 @@ else
     echo 'Downloading the default config file from the repository to "'${VCC_CONFIG_PATH}'"...'
     download_file "$VCC_REPOSITORY_VCC_CONFIG_PATH" "$(normalizePath "$VCC_CONFIG_PATH")"
     echo 'The default config file was downloaded successfully'
+    # Ensure config ends with a newline to avoid concatenation on appends
+    sed -i -e '$a\' "$(normalizePath "$VCC_CONFIG_PATH")"
 fi
 
 # Ensure the VCC config file contains the right Vencord path
@@ -288,7 +309,7 @@ if grep -q '^vencord_path=' "$(normalizePath "$VCC_CONFIG_PATH")"; then
     fi
 else
     echo 'Adding Vencord path to the VCC config file...'
-    echo "vencord_path=\"$(normalizePath "$VENCORD_PATH")\"" >> "$(normalizePath "$VCC_CONFIG_PATH")"
+    printf '\n%s\n' "vencord_path=\"$(normalizePath "$VENCORD_PATH")\"" >> "$(normalizePath "$VCC_CONFIG_PATH")"
     echo 'The Vencord path was added to the VCC config file'
 fi
 
@@ -298,26 +319,35 @@ fi
 # --- Auto-repatch options and setup ---
 
 # Ensure auto_repatch and auto_restart keys exist with defaults
+# Fix potential previous bad concat: insert newline before auto_* if stuck to vencord_path line
+sed -i -E 's|(vencord_path=\"[^\"]*\")auto_|\1\nauto_|' "$(normalizePath "$VCC_CONFIG_PATH")"
+
 if ! grep -q '^auto_repatch=' "$(normalizePath "$VCC_CONFIG_PATH")"; then
-    echo 'auto_repatch="false"' >> "$(normalizePath "$VCC_CONFIG_PATH")"
+    printf '\n%s\n' 'auto_repatch="false"' >> "$(normalizePath "$VCC_CONFIG_PATH")"
 fi
 if ! grep -q '^auto_restart=' "$(normalizePath "$VCC_CONFIG_PATH")"; then
-    echo 'auto_restart="false"' >> "$(normalizePath "$VCC_CONFIG_PATH")"
+    printf '\n%s\n' 'auto_restart="false"' >> "$(normalizePath "$VCC_CONFIG_PATH")"
 fi
 if ! grep -q '^autorepatch_interval=' "$(normalizePath "$VCC_CONFIG_PATH")"; then
-    echo 'autorepatch_interval="30s"' >> "$(normalizePath "$VCC_CONFIG_PATH")"
+    printf '\n%s\n' 'autorepatch_interval="30s"' >> "$(normalizePath "$VCC_CONFIG_PATH")"
 fi
 if ! grep -q '^auto_update=' "$(normalizePath "$VCC_CONFIG_PATH")"; then
-    echo 'auto_update="false"' >> "$(normalizePath "$VCC_CONFIG_PATH")"
+    printf '\n%s\n' 'auto_update="false"' >> "$(normalizePath "$VCC_CONFIG_PATH")"
 fi
 if ! grep -q '^auto_update_interval=' "$(normalizePath "$VCC_CONFIG_PATH")"; then
-    echo 'auto_update_interval="15m"' >> "$(normalizePath "$VCC_CONFIG_PATH")"
+    printf '\n%s\n' 'auto_update_interval="15m"' >> "$(normalizePath "$VCC_CONFIG_PATH")"
 fi
 
 read -p 'Do you want to enable automatic repatch (checks and re-applies if needed)? (y/n) ' -n 1 -r
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
-    sed -i -e 's|^auto_repatch=.*|auto_repatch="true"|' "$(normalizePath "$VCC_CONFIG_PATH")"
+    # Ensure newline end, then set auto_repatch=true
+    sed -i -e '$a\' "$(normalizePath "$VCC_CONFIG_PATH")"
+    if grep -q '^auto_repatch=' "$(normalizePath "$VCC_CONFIG_PATH")"; then
+        sed -i -e 's|^auto_repatch=.*|auto_repatch="true"|' "$(normalizePath "$VCC_CONFIG_PATH")"
+    else
+        printf '\n%s\n' 'auto_repatch="true"' >> "$(normalizePath "$VCC_CONFIG_PATH")"
+    fi
     echo "Choose auto-repatch check interval:"
     echo "  1) 30 seconds (recommended)"
     echo "  2) 1 minute"
@@ -331,9 +361,17 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
     read -p 'Do you also want to enable auto-restart of Vesktop after repatch? (y/n) ' -n 1 -r
     echo
     if [[ $REPLY =~ ^[Yy]$ ]]; then
-        sed -i -e 's|^auto_restart=.*|auto_restart="true"|' "$(normalizePath "$VCC_CONFIG_PATH")"
+        if grep -q '^auto_restart=' "$(normalizePath "$VCC_CONFIG_PATH")"; then
+            sed -i -e 's|^auto_restart=.*|auto_restart="true"|' "$(normalizePath "$VCC_CONFIG_PATH")"
+        else
+            printf '\n%s\n' 'auto_restart="true"' >> "$(normalizePath "$VCC_CONFIG_PATH")"
+        fi
     else
-        sed -i -e 's|^auto_restart=.*|auto_restart="false"|' "$(normalizePath "$VCC_CONFIG_PATH")"
+        if grep -q '^auto_restart=' "$(normalizePath "$VCC_CONFIG_PATH")"; then
+            sed -i -e 's|^auto_restart=.*|auto_restart="false"|' "$(normalizePath "$VCC_CONFIG_PATH")"
+        else
+            printf '\n%s\n' 'auto_restart="false"' >> "$(normalizePath "$VCC_CONFIG_PATH")"
+        fi
     fi
 fi
 
@@ -341,240 +379,42 @@ fi
 read -p 'Do you want to enable automatic update (periodically fetch latest VCC files)? (y/n) ' -n 1 -r
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
-    sed -i -e 's|^auto_update=.*|auto_update="true"|' "$(normalizePath "$VCC_CONFIG_PATH")"
+    if grep -q '^auto_update=' "$(normalizePath "$VCC_CONFIG_PATH")"; then
+        sed -i -e 's|^auto_update=.*|auto_update="true"|' "$(normalizePath "$VCC_CONFIG_PATH")"
+    else
+        printf '\n%s\n' 'auto_update="true"' >> "$(normalizePath "$VCC_CONFIG_PATH")"
+    fi
     # Keep default interval 6h; advanced users can edit .config
 else
-    sed -i -e 's|^auto_update=.*|auto_update="false"|' "$(normalizePath "$VCC_CONFIG_PATH")"
+    if grep -q '^auto_update=' "$(normalizePath "$VCC_CONFIG_PATH")"; then
+        sed -i -e 's|^auto_update=.*|auto_update="false"|' "$(normalizePath "$VCC_CONFIG_PATH")"
+    else
+        printf '\n%s\n' 'auto_update="false"' >> "$(normalizePath "$VCC_CONFIG_PATH")"
+    fi
 fi
 
 # Create auto-repatch scripts in ~/.vesktopCustomCommands
-cat > "$(normalizePath "$VCC_PATH")vcc-autorepatch.sh" <<'EOSH'
-#!/bin/bash
+echo 'Downloading auto-repatch script to "'${VCC_PATH}'vcc-autorepatch.sh"...'
+download_file "${VCC_REPOSITORY_VCC_AUTOREPATCH_PATH:-${VCC_REPOSITORY_VCC_PATH}vcc-autorepatch.sh}" "$(normalizePath "${VCC_PATH}vcc-autorepatch.sh")"
+chmod +x "$(normalizePath "${VCC_PATH}vcc-autorepatch.sh")"
 
-# Lock to avoid concurrent runs
-LOCK_FILE="$HOME/.vesktopCustomCommands/.autorepatch.lock"
-exec 9>"$LOCK_FILE"
-flock -n 9 || exit 0
+echo 'Downloading interactive repatch helper to "'${VCC_PATH}'vcc-repatch-interactive.sh"...'
+download_file "${VCC_REPOSITORY_VCC_REPATCH_INTERACTIVE_PATH:-${VCC_REPOSITORY_VCC_PATH}vcc-repatch-interactive.sh}" "$(normalizePath "${VCC_PATH}vcc-repatch-interactive.sh")"
+chmod +x "$(normalizePath "${VCC_PATH}vcc-repatch-interactive.sh")"
 
-CONFIG="$HOME/.vesktopCustomCommands/.config"
+# Download auto-update script in ~/.vesktopCustomCommands
+echo 'Downloading auto-update script to "'${VCC_PATH}'vcc-autoupdate.sh"...'
+download_file "${VCC_REPOSITORY_VCC_PATH}vcc-autoupdate.sh" "$(normalizePath "${VCC_PATH}vcc-autoupdate.sh")"
+chmod +x "$(normalizePath "$VCC_PATH")vcc-autoupdate.sh"
 
-normalizePath() {
-  local input_path="$1"
-  if [[ "$input_path" == ~* ]]; then
-    echo "${input_path/#\~/$HOME}"
-  else
-    echo "$input_path"
-  fi
-}
-
-detect_vesktop() {
-  DETECTED=""; START_CMD=""; KILL_CMD=""
-  if command -v flatpak >/dev/null 2>&1; then
-    if flatpak info dev.vencord.Vesktop >/dev/null 2>&1 || flatpak ps 2>/dev/null | grep -q dev.vencord.Vesktop; then
-      DETECTED="flatpak"
-      FP_BIN="$(command -v flatpak)"; ARCH="$(uname -m)"
-      START_CMD="$FP_BIN run --branch=stable --arch=$ARCH --command=startvesktop --file-forwarding dev.vencord.Vesktop @@u %U @@"
-      KILL_CMD="$FP_BIN kill dev.vencord.Vesktop || pkill -f dev.vencord.Vesktop || true"
-      return
-    fi
-  fi
-  if command -v vesktop >/dev/null 2>&1; then
-    DETECTED="system"; START_CMD="vesktop"; KILL_CMD="pkill -x vesktop || pkill -f vesktop || true"; return
-  fi
-  PID="$(pgrep -f -n '[Vv]esktop' || true)"
-  if [ -n "$PID" ] && [ -r "/proc/$PID/exe" ]; then
-    EXE_PATH="$(readlink -f "/proc/$PID/exe" || true)"
-    if [ -n "$EXE_PATH" ]; then
-      DETECTED="path"; START_CMD="$EXE_PATH"; KILL_CMD="kill $PID || true"; return
-    fi
-  fi
-}
-
-ensure_terminal() {
-  for t in konsole gnome-terminal xfce4-terminal kitty alacritty wezterm tilix mate-terminal lxterminal xterm; do
-    if command -v "$t" >/dev/null 2>&1; then
-      echo "$t"; return 0
-    fi
-  done
-  echo "xterm" # fallback
-}
-
-is_patched() {
-  local preload_file="$1"
-  grep -q 'document.addEventListener("DOMContentLoaded",()=>\{document.documentElement.appendChild(r);' "$preload_file"
-}
-
-patch_preload() {
-  local preload_file="$1"
-  local sample_url="https://raw.githubusercontent.com/NitramO-YT/vesktopCustomCommands/main/dist/vencord/vencordDesktopPreload_sample.js"
-  CODE_TO_INJECT=$(curl -s -w "%{http_code}" "$sample_url") || return 1
-  HTTP_RESPONSE="${CODE_TO_INJECT: -3}"; CODE_TO_INJECT="${CODE_TO_INJECT%???}"
-  if [ "$HTTP_RESPONSE" -ne 200 ] || [ -z "$CODE_TO_INJECT" ]; then
-    echo "Error: Unable to download code sample (HTTP $HTTP_RESPONSE)" >&2
-    return 1
-  fi
-  if grep -q 'document.addEventListener("DOMContentLoaded",()=>document.documentElement.appendChild(r),{once:!0})' "$preload_file"; then
-    sed -i "s|document\.addEventListener(\"DOMContentLoaded\",()=>document\.documentElement\.appendChild(r),{once:!0})|document.addEventListener(\"DOMContentLoaded\",()=>{document.documentElement.appendChild(r);${CODE_TO_INJECT}},{once:!0})|" "$preload_file"
-    return $?
-  fi
-  return 0
-}
-
-restart_vesktop() {
-  detect_vesktop
-  if [ -n "$DETECTED" ]; then
-    eval "$KILL_CMD"
-    sleep 1
-    nohup bash -c "$START_CMD" >/dev/null 2>&1 & disown
-    return 0
-  fi
-  return 1
-}
-
-main() {
-  [ -f "$CONFIG" ] || exit 0
-  # shellcheck disable=SC1090
-  source "$CONFIG"
-  [ "${auto_repatch}" = "true" ] || exit 0
-  # Also use this timer for auto_update checks even if auto_repatch is off
-  AUTO_UPDATE_ACTIVE=false
-  if [ "${auto_update}" = "true" ]; then
-    AUTO_UPDATE_ACTIVE=true
-  fi
-  if [ "${auto_repatch}" != "true" ] && [ "$AUTO_UPDATE_ACTIVE" != true ]; then
-    exit 0
-  fi
-  PRELOAD_FILE="$(normalizePath "${vencord_path:-~/.config/Vencord/dist/}")/vencordDesktopPreload.js"
-  if [ ! -f "$PRELOAD_FILE" ]; then
-    # If no preload yet but auto_update is on, still run update checks
-    PRELOAD_FILE=""
-  fi
-  # Auto-update check
-  if [ "$AUTO_UPDATE_ACTIVE" = true ]; then
-    bash -lc "$HOME/.vesktopCustomCommands/vcc-autoupdate.sh" || true
-  fi
-  # Auto-repatch check
-  if [ -n "$PRELOAD_FILE" ] && [ -f "$PRELOAD_FILE" ]; then
-    if is_patched "$PRELOAD_FILE"; then
-      exit 0
-    fi
-    if [ "${auto_repatch}" = "true" ]; then
-      if [ "${auto_restart}" = "true" ]; then
-        if patch_preload "$PRELOAD_FILE"; then
-          restart_vesktop || true
-        fi
-      else
-        term=$(ensure_terminal)
-        nohup "$term" -e bash -lc "$HOME/.vesktopCustomCommands/vcc-repatch-interactive.sh" >/dev/null 2>&1 & disown
-      fi
-    fi
-  fi
-}
-
-main "$@"
-EOSH
-chmod +x "$(normalizePath "$VCC_PATH")vcc-autorepatch.sh"
-
-cat > "$(normalizePath "$VCC_PATH")vcc-repatch-interactive.sh" <<'EOSH'
-#!/bin/bash
-CONFIG="$HOME/.vesktopCustomCommands/.config"
-
-normalizePath() {
-  local input_path="$1"
-  if [[ "$input_path" == ~* ]]; then
-    echo "${input_path/#\~/$HOME}"
-  else
-    echo "$input_path"
-  fi
-}
-
-detect_vesktop() {
-  DETECTED=""; START_CMD=""; KILL_CMD=""
-  if command -v flatpak >/dev/null 2>&1; then
-    if flatpak info dev.vencord.Vesktop >/dev/null 2>&1 || flatpak ps 2>/dev/null | grep -q dev.vencord.Vesktop; then
-      DETECTED="flatpak"
-      FP_BIN="$(command -v flatpak)"; ARCH="$(uname -m)"
-      START_CMD="$FP_BIN run --branch=stable --arch=$ARCH --command=startvesktop --file-forwarding dev.vencord.Vesktop @@u %U @@"
-      KILL_CMD="$FP_BIN kill dev.vencord.Vesktop || pkill -f dev.vencord.Vesktop || true"
-      return
-    fi
-  fi
-  if command -v vesktop >/dev/null 2>&1; then
-    DETECTED="system"; START_CMD="vesktop"; KILL_CMD="pkill -x vesktop || pkill -f vesktop || true"; return
-  fi
-  PID="$(pgrep -f -n '[Vv]esktop' || true)"
-  if [ -n "$PID" ] && [ -r "/proc/$PID/exe" ]; then
-    EXE_PATH="$(readlink -f "/proc/$PID/exe" || true)"
-    if [ -n "$EXE_PATH" ]; then
-      DETECTED="path"; START_CMD="$EXE_PATH"; KILL_CMD="kill $PID || true"; return
-    fi
-  fi
-}
-
-is_patched() {
-  local preload_file="$1"
-  grep -q 'document.addEventListener("DOMContentLoaded",()=>\{document.documentElement.appendChild(r);' "$preload_file"
-}
-
-patch_preload() {
-  local preload_file="$1"
-  local sample_url="https://raw.githubusercontent.com/NitramO-YT/vesktopCustomCommands/main/dist/vencord/vencordDesktopPreload_sample.js"
-  CODE_TO_INJECT=$(curl -s -w "%{http_code}" "$sample_url") || return 1
-  HTTP_RESPONSE="${CODE_TO_INJECT: -3}"; CODE_TO_INJECT="${CODE_TO_INJECT%???}"
-  if [ "$HTTP_RESPONSE" -ne 200 ] || [ -z "$CODE_TO_INJECT" ]; then
-    echo "Error: Unable to download code sample (HTTP $HTTP_RESPONSE)" >&2
-    return 1
-  fi
-  if grep -q 'document.addEventListener("DOMContentLoaded",()=>document.documentElement.appendChild(r),{once:!0})' "$preload_file"; then
-    sed -i "s|document\.addEventListener(\"DOMContentLoaded\",()=>document\.documentElement\.appendChild(r),{once:!0})|document.addEventListener(\"DOMContentLoaded\",()=>{document.documentElement.appendChild(r);${CODE_TO_INJECT}},{once:!0})|" "$preload_file"
-    return $?
-  fi
-  return 0
-}
-
-restart_vesktop() {
-  detect_vesktop
-  if [ -n "$DETECTED" ]; then
-    eval "$KILL_CMD"; sleep 1
-    nohup bash -c "$START_CMD" >/dev/null 2>&1 & disown
-    return 0
-  fi
-  return 1
-}
-
-[ -f "$CONFIG" ] || { echo "Missing config at $CONFIG"; exit 1; }
-# shellcheck disable=SC1090
-source "$CONFIG"
-PRELOAD_FILE="$(normalizePath "${vencord_path:-~/.config/Vencord/dist/}")/vencordDesktopPreload.js"
-
-echo "vesktopCustomCommands: le repatch est nécessaire."
-read -p "Voulez-vous repatch maintenant ? (y/n) " -n 1 -r; echo
-if [[ $REPLY =~ ^[Yy]$ ]]; then
-  if patch_preload "$PRELOAD_FILE"; then
-    echo "Repatch effectué."
-    read -p "Voulez-vous relancer Vesktop maintenant ? (y/n) " -n 1 -r; echo
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
-      restart_vesktop || echo "Impossible de relancer automatiquement Vesktop."
-    fi
-    exit 0
-  else
-    echo "Le repatch a échoué."
-    exit 1
-  fi
-else
-  echo "Désactivation de l'auto-repatch proposée."
-  read -p "Confirmez-vous la désactivation de l'auto-repatch ? (y/n) " -n 1 -r; echo
-  if [[ $REPLY =~ ^[Yy]$ ]]; then
-    sed -i -e 's|^auto_repatch=.*|auto_repatch="false"|' "$CONFIG"
-    echo "Auto-repatch désactivé."
-    exit 0
-  else
-    echo "Annulé. Aucune modification des paramètres."
-    exit 0
-  fi
-fi
-EOSH
-chmod +x "$(normalizePath "$VCC_PATH")vcc-repatch-interactive.sh"
+# Persist session environment for GUI prompts under systemd user
+ENV_FILE="$(normalizePath "$VCC_PATH")/.env"
+{
+  [ -n "$DISPLAY" ] && echo "DISPLAY=$DISPLAY"
+  [ -n "$WAYLAND_DISPLAY" ] && echo "WAYLAND_DISPLAY=$WAYLAND_DISPLAY"
+  [ -n "$XDG_RUNTIME_DIR" ] && echo "XDG_RUNTIME_DIR=$XDG_RUNTIME_DIR"
+  [ -n "$DBUS_SESSION_BUS_ADDRESS" ] && echo "DBUS_SESSION_BUS_ADDRESS=$DBUS_SESSION_BUS_ADDRESS"
+} > "$ENV_FILE"
 
 # Create systemd user service and timer
 SYSTEMD_USER_DIR="$HOME/.config/systemd/user"
@@ -585,7 +425,10 @@ Description=vesktopCustomCommands auto-repatch service
 
 [Service]
 Type=oneshot
-ExecStart=/bin/bash -lc "$HOME/.vesktopCustomCommands/vcc-autorepatch.sh"
+ExecStart=%h/.vesktopCustomCommands/vcc-autorepatch.sh
+EnvironmentFile=-%h/.vesktopCustomCommands/.env
+# Ensure spawned terminals survive after the service exits
+KillMode=process
 EOUNIT
 
 AUTOREPATCH_INTERVAL=$(grep '^autorepatch_interval=' "$(normalizePath "$VCC_CONFIG_PATH")" | sed -E 's/^autorepatch_interval=\"(.*)\"/\1/')
@@ -620,6 +463,8 @@ if command -v systemctl >/dev/null 2>&1; then
     source "$(normalizePath "$VCC_CONFIG_PATH")"
     if [ "${auto_repatch}" = "true" ] || [ "${auto_update}" = "true" ]; then
         systemctl --user enable --now vcc-autorepatch.timer || true
+        # Lancer un premier run immédiat pour vérifier l'état sans attendre le timer
+        systemctl --user start vcc-autorepatch.service 2>/dev/null || true
     else
         systemctl --user disable --now vcc-autorepatch.timer 2>/dev/null || true
     fi
