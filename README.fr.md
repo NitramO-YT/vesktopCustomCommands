@@ -24,8 +24,44 @@ Vous devez configurer un raccourci global personnalisé dans votre système pour
 ## Installation automatique
 Exécutez cette commande dans votre terminal et suivez les instructions :
 ```bash
-bash -c "$(curl -sS https://raw.githubusercontent.com/NitramO-YT/vesktopCustomCommands/refs/heads/main/install.sh"
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/NitramO-YT/vesktopCustomCommands/refs/heads/main/install.sh)"
 ```
+Remarque : si un fichier de configuration existe déjà à l’emplacement `~/.vesktopCustomCommands/.config`, l’installateur le préserve et met uniquement à jour l’entrée `vencord_path` si nécessaire.
+
+### Optionnel : Auto-repatch
+
+Lors de l’installation, vous pouvez activer un système d’auto-repatch qui vérifie périodiquement si le patch VCC est toujours présent dans le fichier de préchargement de Vencord et le réapplique s’il a été retiré (ex. après une mise à jour ou une réinitialisation de Vencord/Vesktop).
+
+- Pourquoi en a-t-on besoin ? Les mises à jour de Vesktop/Vencord ou certains scénarios de démarrage peuvent restaurer le fichier de préchargement dans son état d’origine, supprimant l’injection VCC. L’auto-repatch garantit que vos raccourcis continuent de fonctionner sans intervention manuelle.
+- Les paramètres sont dans `~/.vesktopCustomCommands/.config` :
+  - `auto_repatch="true|false"` (par défaut : `false`)
+  - `auto_restart="true|false"` (par défaut : `false`) – si activé, Vesktop sera automatiquement relancé après un repatch.
+  - `autorepatch_interval="30s|1m|3m"` (par défaut : `30s`) – intervalle de vérification.
+- Un timer `systemd` utilisateur s’exécute à l’intervalle choisi lorsque `auto_repatch` est activé.
+- Vous pouvez l’activer/désactiver plus tard avec :
+  ```bash
+  bash -c "$(curl -fsSL https://raw.githubusercontent.com/NitramO-YT/vesktopCustomCommands/refs/heads/main/src/vesktopCustomCommands/enable_autorepatch.sh)"
+  ```
+  ```bash
+  bash -c "$(curl -fsSL https://raw.githubusercontent.com/NitramO-YT/vesktopCustomCommands/refs/heads/main/src/vesktopCustomCommands/disable_autorepatch.sh)"
+  ```
+
+Configuration manuelle : éditez `~/.vesktopCustomCommands/.config` et définissez `auto_repatch`/`auto_restart`. Vous pouvez aussi régler `autorepatch_interval` sur `"30s"`, `"1m"` ou `"3m"`. Si vous le désactivez manuellement, le timer sera stoppé au prochain passage de l’installateur, ou utilisez le script ci-dessus.
+
+### Optionnel : Auto-update
+
+Vous pouvez activer un système d’auto-update qui vérifie régulièrement si une version plus récente est disponible sur GitHub et met à jour les fichiers nécessaires (code personnalisé pour Vencord et scripts locaux comme `mute.sh` et `deafen.sh`).
+
+- Paramètres dans `~/.vesktopCustomCommands/.config` :
+  - `auto_update="true|false"` (par défaut : `false`)
+  - `auto_update_interval` (par défaut : `15m`) – le timer s’exécute avec `autorepatch_interval` si l’auto-repatch est activé, sinon avec `auto_update_interval` si seul l’auto-update est activé.
+- Activer/désactiver par la suite :
+  ```bash
+  bash -c "$(curl -fsSL https://raw.githubusercontent.com/NitramO-YT/vesktopCustomCommands/refs/heads/main/src/vesktopCustomCommands/enable_autoupdate.sh)"
+  ```
+  ```bash
+  bash -c "$(curl -fsSL https://raw.githubusercontent.com/NitramO-YT/vesktopCustomCommands/refs/heads/main/src/vesktopCustomCommands/disable_autoupdate.sh)"
+  ```
 
 ## Installation manuelle
 1. Téléchargez le dossier `dist` du dépôt ou son contenu.
@@ -37,15 +73,7 @@ bash -c "$(curl -sS https://raw.githubusercontent.com/NitramO-YT/vesktopCustomCo
    cp ~/.config/Vencord/dist/vencordDesktopPreload.js ~/.config/Vencord/dist/vencordDesktopPreload.js.bak
    ```
    Si vous souhaitez restaurer ce fichier plus tard, vous pouvez simplement le supprimer et redémarrer Vesktop pour qu'il soit recréé.
-4. Injectez le contenu de `vencordDesktopPreload_sample.js` entre les lignes :
-   ```javascript
-   document.addEventListener("DOMContentLoaded",()=>{
-   ```
-   et 
-   ```javascript
-   document.documentElement.appendChild(r)},{once:!0})
-   ```
-   dans votre fichier de préchargement Vencord (généralement situé dans `~/.config/Vencord/dist/vencordDesktopPreload.js`) ou remplacez son contenu par celui de `vencordDesktopPreload.js` (*NON RECOMMANDÉ car en cas de mise à jour de Vesktop, si VCC n'a pas été mis à jour depuis, c'est moins fiable et il est possible que ce fichier soit obsolète.*).
+4. Soit injectez le contenu de `vencordDesktopPreload_sample.js` dans votre fichier de préchargement Vencord (généralement situé dans `~/.config/Vencord/dist/vencordDesktopPreload.js`) en remplaçant la ligne `document.addEventListener("DOMContentLoaded",()=>document.documentElement.appendChild(r),{once:!0})` par `document.addEventListener("DOMContentLoaded",()=>document.documentElement.appendChild(r);(CONTENU DU FICHIER D'EXTRAIT DE PRÉCHARGEMENT ICI),{once:!0})` et remplacez `(CONTENU DU FICHIER D'EXTRAIT DE PRÉCHARGEMENT ICI)` par le contenu de `vencordDesktopPreload_sample.js`, soit remplacez le fichier entier par le fichier `vencordDesktopPreload.js` fourni (*NON RECOMMANDÉ, car en cas de mise à jour de Vesktop, si VCC n'a pas été mis à jour depuis, c'est moins fiable et il est possible que ce fichier soit obsolète.*).
 5. Créez un dossier `vesktopCustomCommands` dans le chemin de Vencord (généralement situé dans `~/.config/Vencord/dist/`) et placez-y le fichier `customCode.js`.
 6. Créez un dossier `~/.vesktopCustomCommands` et placez-y les fichiers `mute.sh` et `deafen.sh`.
 7. Ajoutez les permissions nécessaires aux scripts `mute.sh` et `deafen.sh` :
@@ -66,7 +94,15 @@ bash -c "$(curl -sS https://raw.githubusercontent.com/NitramO-YT/vesktopCustomCo
 
 ## Désinstallation automatique
 
-**PAS DE DÉSINSTALLATEUR AUTOMATIQUE DISPONIBLE POUR LE MOMENT. VEUILLEZ SUIVRE LES ÉTAPES DE DÉSINSTALLATION MANUELLE.**
+Exécutez cette commande dans votre terminal et suivez les instructions :
+```bash
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/NitramO-YT/vesktopCustomCommands/refs/heads/main/uninstall.sh)"
+```
+Lors de la désinstallation, il vous sera demandé si vous souhaitez TOUT supprimer, y compris vos paramètres (`~/.vesktopCustomCommands/.config`).
+- Répondez « y » : tous les fichiers et paramètres sont supprimés.
+- Répondez « n » : seuls les fichiers du programme sont supprimés ; votre `.config` est conservé.
+
+Si les paramètres sont supprimés, le service/timer d’auto-repatch et les scripts associés sont également supprimés.
 
 ## Désinstallation manuelle
 
@@ -75,7 +111,7 @@ bash -c "$(curl -sS https://raw.githubusercontent.com/NitramO-YT/vesktopCustomCo
 3. Supprimez le dossier `~/.vesktopCustomCommands`.
 4. Supprimez le fichier `customCode.js` dans le chemin de Vencord `~/.config/Vencord/dist/vesktopCustomCommands/`.
 5. Supprimez le dossier `vesktopCustomCommands` dans le chemin de Vencord `~/.config/Vencord/dist/`.
-6. Supprimez le code injecté dans le fichier de préchargement de Vencord (généralement situé dans `~/.config/Vencord/dist/vencordDesktopPreload.js`) ou remplacez-le par la sauvegarde que vous avez faite.
+6. Supprimez le code injecté dans le fichier de préchargement de Vencord (généralement situé dans `~/.config/Vencord/dist/vencordDesktopPreload.js`) ou remplacez-le par la sauvegarde que vous avez faite si vous en avez une. (Vous pouvez également supprimer le fichier et redémarrer Vesktop pour qu'il soit recréé).
 7. Redémarrez Vesktop pour appliquer les changements.
 
 ---

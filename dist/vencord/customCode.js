@@ -3,10 +3,12 @@ const muteActionFileName = 'mute';
 const deafenActionFileName = 'deafen';
 
 //button_adca65 enabled_adca65 button_dd4f85 lookBlank_dd4f85 colorBrand_dd4f85 grow_dd4f85 button_adca65 :has <g clip-path="url(#__lottie_element_5)"></g>
-const muteButtonSelector = `button.button_adca65.button_dd4f85.button_adca65:has(g[clip-path="url(#__lottie_element_5)"])`;
+// const muteButtonSelector = `button.button_adca65.button_dd4f85.button_adca65:has(g[clip-path="url(#__lottie_element_5)"])`;
+const muteButtonSelector = `button.button__67645.enabled__67645.button__201d5.button__67645:has(g[clip-path="url(#__lottie_element_5)"])`;
 
 //button_adca65 enabled_adca65 button_dd4f85 lookBlank_dd4f85 colorBrand_dd4f85 grow_dd4f85 button_adca65 :has <g clip-path="url(#__lottie_element_42)"></g>
-const deafenButtonSelector = `button.button_adca65.button_dd4f85.button_adca65:has(g[clip-path="url(#__lottie_element_42)"])`;
+// const deafenButtonSelector = `button.button_adca65.button_dd4f85.button_adca65:has(g[clip-path="url(#__lottie_element_42)"])`;
+const deafenButtonSelector = `button.button__67645.enabled__67645.button__201d5.button__67645:has(g[clip-path="url(#__lottie_element_42)"])`;
 
 
 
