@@ -34,7 +34,7 @@ fi
 FULL_DIR="${VENCORD_PATH}vesktopCustomCommands"
 
 # Check if Vesktop is running
-VESKTOP_PIDS=$(pgrep -af '(dev\.vencord\.)?vesktop' | awk '{print $1}')
+VESKTOP_PIDS=$(pgrep -aif '(dev\.vencord\.)?vesktop' | awk '{print $1}')
 
 if [ -n "$VESKTOP_PIDS" ]; then
   # Vesktop is active, create the mute file
@@ -57,4 +57,3 @@ else
   echo "Error: Vesktop is not running. The 'mute' file will not be created."
   exit 1
 fi
-
