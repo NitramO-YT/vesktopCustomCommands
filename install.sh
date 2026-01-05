@@ -114,7 +114,11 @@ if [[ ! $REPLY =~ ^[Yy]$ ]]; then
     echo "    - 'vencord' folder contains the files to inject in the Vencord preload file."
     echo "    - 'vesktopCustomCommands' folder contains the scripts to mute/deafen and the '.config' file."
     echo "3. You can make a backup of your Vencord preload file (usually located in '~/.config/Vencord/dist/vencordDesktopPreload.js' so 'cp ~/.config/Vencord/dist/vencordDesktopPreload.js ~/.config/Vencord/dist/vencordDesktopPreload.js.bak') or not, if you want to restore it later you can delete the file and start Vesktop to recreate it."
-    echo "4. Either inject the content of 'vencordDesktopPreload_sample.js' in your Vencord preload file (usually located in '~/.config/Vencord/dist/vencordDesktopPreload.js') by replacing the line 'document.addEventListener(\"DOMContentLoaded\",()=>document.documentElement.appendChild(r),{once:!0})' by 'document.addEventListener(\"DOMContentLoaded\",()=>document.documentElement.appendChild(r);(PRELOAD SAMPLE FILE CONTENT HERE),{once:!0})' and replace '(PRELOAD SAMPLE FILE CONTENT HERE)' by the content of 'vencordDesktopPreload_sample.js', or replace the whole file with the provided 'vencordDesktopPreload.js' (*NOT RECOMMENDED, as in the event of a Vesktop update, if VCC has not been updated since then, it is less reliable, and this file may be obsolete*.)."
+    echo "4. Inject the content of 'vencordDesktopPreload_sample.js' in your Vencord preload file (usually located in '~/.config/Vencord/dist/vencordDesktopPreload.js'):"
+    echo "    - For NEW Vencord (c123efd+): Replace 'r(\"VencordInitFileWatchers\")' with 'r(\"VencordInitFileWatchers\"),document.readyState===\"complete\"?(()=>{(PRELOAD SAMPLE CONTENT)})():document.addEventListener(\"DOMContentLoaded\",()=>{(PRELOAD SAMPLE CONTENT)},{once:!0})'"
+    echo "    - For OLD Vencord: Replace 'document.addEventListener(\"DOMContentLoaded\",()=>document.documentElement.appendChild(r),{once:!0})' with 'document.addEventListener(\"DOMContentLoaded\",()=>{document.documentElement.appendChild(r);(PRELOAD SAMPLE CONTENT)},{once:!0})'"
+    echo "    Replace '(PRELOAD SAMPLE CONTENT)' with the content of 'vencordDesktopPreload_sample.js'."
+    echo "    (*NOT RECOMMENDED to replace the whole file, as it may become obsolete with Vesktop updates*)"
     echo "5. Make a dir 'vesktopCustomCommands' in your Vencord path (usually located in '~/.config/Vencord/dist/') and put the file 'customCode.js' in it."
     echo "6. Make a dir '~/.vesktopCustomCommands' and put the files 'mute.sh' and 'deafen.sh' in it."
     echo "7. Add permissions to the scripts 'mute.sh' and 'deafen.sh':"
@@ -233,7 +237,21 @@ if [ "$PRELOAD_FILE_PATCHED" = false ]; then
     fi
 
     # Check if the preload file is already patched (not the first install)
-    if ! grep -q 'document.addEventListener("DOMContentLoaded",()=>document.documentElement.appendChild(r),{once:!0})' "$(normalizePath "$VENCORD_PRELOAD_FILE")"; then
+    # Support both old and new Vencord structures
+    ALREADY_PATCHED=false
+    if grep -q 'r("VencordInitFileWatchers")' "$(normalizePath "$VENCORD_PRELOAD_FILE")"; then
+        # New structure: check if already patched
+        if grep -q 'getTheme\",s\.quickCss\.getEditorTheme));if(location\.protocol' "$(normalizePath "$VENCORD_PRELOAD_FILE")"; then
+            ALREADY_PATCHED=true
+        fi
+    else
+        # Old structure: check if already patched
+        if ! grep -q 'document.addEventListener("DOMContentLoaded",()=>document.documentElement.appendChild(r),{once:!0})' "$(normalizePath "$VENCORD_PRELOAD_FILE")"; then
+            ALREADY_PATCHED=true
+        fi
+    fi
+
+    if [ "$ALREADY_PATCHED" = true ]; then
         echo "The preload file is already patched, skipping the patching process..."
     else
         # Make backup of the preload file
@@ -241,18 +259,30 @@ if [ "$PRELOAD_FILE_PATCHED" = false ]; then
         cp "$(normalizePath "$VENCORD_PRELOAD_FILE")" "$(normalizePath "$VENCORD_PRELOAD_FILE").bak"
         
         echo "Injecting the code from the repository into the preload file..."
-        # Check if the markers exist in the preload file
-        if grep -q 'document.addEventListener("DOMContentLoaded",()=>document.documentElement.appendChild(r),{once:!0})' "$(normalizePath "$VENCORD_PRELOAD_FILE")"; then
-            # Inject the code sample between the specified markers into the preload file
+        # Check which structure the file uses and inject accordingly
+        if grep -q 'r("VencordInitFileWatchers")' "$(normalizePath "$VENCORD_PRELOAD_FILE")"; then
+            # New Vencord structure (c123efd+)
+            echo "Detected new Vencord structure, using new injection method..."
+            sed -i "s|getTheme\",s\.quickCss\.getEditorTheme));|getTheme\",s.quickCss.getEditorTheme));if(location.protocol!==\"data:\"){document.readyState===\"complete\"?(()=>{${CODE_TO_INJECT}})():document.addEventListener(\"DOMContentLoaded\",()=>{${CODE_TO_INJECT}},{once:!0})}|" "$(normalizePath "$VENCORD_PRELOAD_FILE")"
+            if [ $? -eq 0 ]; then
+                echo "The preload file was patched successfully (new structure)."
+            else
+                echo "Error: Failed to patch the preload file."
+                exit 1
+            fi
+        elif grep -q 'document.addEventListener("DOMContentLoaded",()=>document.documentElement.appendChild(r),{once:!0})' "$(normalizePath "$VENCORD_PRELOAD_FILE")"; then
+            # Old Vencord structure
+            echo "Detected old Vencord structure, using legacy injection method..."
             sed -i "s|document\.addEventListener(\"DOMContentLoaded\",()=>document\.documentElement\.appendChild(r),{once:!0})|document.addEventListener(\"DOMContentLoaded\",()=>{document.documentElement.appendChild(r);${CODE_TO_INJECT}},{once:!0})|" "$(normalizePath "$VENCORD_PRELOAD_FILE")"
             if [ $? -eq 0 ]; then
-                echo "The preload file was patched successfully."
+                echo "The preload file was patched successfully (old structure)."
             else
                 echo "Error: Failed to patch the preload file."
                 exit 1
             fi
         else
-            echo "Error: Markers not found in the preload file. Cannot patch the file."
+            echo "Error: Neither old nor new injection markers found in the preload file. Cannot patch the file."
+            echo "This may indicate an incompatible Vencord version."
             exit 1
         fi
     fi

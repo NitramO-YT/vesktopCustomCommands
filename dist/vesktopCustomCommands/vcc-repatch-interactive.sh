@@ -58,11 +58,20 @@ detect_vesktop() {
 
 is_patched() {
   local preload_file="$1"
-  # Same logic as installer: if the original line is still present, it's NOT patched
-  if grep -q 'document.addEventListener("DOMContentLoaded",()=>document.documentElement.appendChild(r),{once:!0})' "$preload_file"; then
+  # Check if the file uses the new Vencord structure (c123efd+)
+  if grep -q 'r("VencordInitFileWatchers")' "$preload_file"; then
+    # New structure: patched if we find injection code after the ternary
+    if grep -q 'getTheme\",s\.quickCss\.getEditorTheme));if(location\.protocol' "$preload_file"; then
+      return 0
+    fi
     return 1
+  else
+    # Old structure: patched if the original line no longer exists
+    if grep -q 'document.addEventListener("DOMContentLoaded",()=>document.documentElement.appendChild(r),{once:!0})' "$preload_file"; then
+      return 1
+    fi
+    return 0
   fi
-  return 0
 }
 
 patch_preload() {
@@ -74,10 +83,18 @@ patch_preload() {
     echo "Error: Unable to download code sample (HTTP $HTTP_RESPONSE)" >&2
     return 1
   fi
-  if grep -q 'document.addEventListener("DOMContentLoaded",()=>document.documentElement.appendChild(r),{once:!0})' "$preload_file"; then
+
+  # Check if it's the new Vencord structure (c123efd+)
+  if grep -q 'r("VencordInitFileWatchers")' "$preload_file"; then
+    # New structure: inject after the main ternary as a separate if statement
+    sed -i "s|getTheme\",s\.quickCss\.getEditorTheme));|getTheme\",s.quickCss.getEditorTheme));if(location.protocol!==\"data:\"){document.readyState===\"complete\"?(()=>{${CODE_TO_INJECT}})():document.addEventListener(\"DOMContentLoaded\",()=>{${CODE_TO_INJECT}},{once:!0})}|" "$preload_file"
+    return $?
+  elif grep -q 'document.addEventListener("DOMContentLoaded",()=>document.documentElement.appendChild(r),{once:!0})' "$preload_file"; then
+    # Old structure: use legacy injection system
     sed -i "s|document\.addEventListener(\"DOMContentLoaded\",()=>document\.documentElement\.appendChild(r),{once:!0})|document.addEventListener(\"DOMContentLoaded\",()=>{document.documentElement.appendChild(r);${CODE_TO_INJECT}},{once:!0})|" "$preload_file"
     return $?
   fi
+
   return 1
 }
 

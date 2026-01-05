@@ -31,6 +31,66 @@ ensure_session_env() {
   export $(grep -E '^(DISPLAY|WAYLAND_DISPLAY|XDG_RUNTIME_DIR|DBUS_SESSION_BUS_ADDRESS)=' "$env_file" | xargs -d '\n') || true
 }
 
+# Ensure a dedicated auto-update timer/service exists and matches config
+ensure_update_timer_interval_matches() {
+  local unit_dir="$HOME/.config/systemd/user"
+  local service_file="$unit_dir/vcc-autoupdate.service"
+  local timer_file="$unit_dir/vcc-autoupdate.timer"
+
+  mkdir -p "$unit_dir" 2>/dev/null || true
+
+  # If auto_update disabled: turn off timer and return
+  if [ "${auto_update:-false}" != "true" ]; then
+    if command -v systemctl >/dev/null 2>&1; then
+      systemctl --user disable --now vcc-autoupdate.timer 2>/dev/null || true
+    fi
+    return 0
+  fi
+
+  # Desired interval
+  local desired_interval="${auto_update_interval:-15m}"
+
+  # Ensure service unit present (idempotent)
+  if [ ! -f "$service_file" ]; then
+    cat > "$service_file" <<'EOUNIT'
+[Unit]
+Description=vesktopCustomCommands auto-update service
+
+[Service]
+Type=oneshot
+ExecStart=%h/.vesktopCustomCommands/vcc-autoupdate.sh
+EnvironmentFile=-%h/.vesktopCustomCommands/.env
+KillMode=process
+EOUNIT
+  fi
+
+  # Read current interval if timer exists
+  local current_interval=""
+  if [ -f "$timer_file" ]; then
+    current_interval="$(grep -E '^OnUnitActiveSec=' "$timer_file" | head -n1 | sed -E 's/^OnUnitActiveSec=(.*)/\1/')"
+  fi
+
+  # Rewrite timer if missing or interval differs
+  if [ ! -f "$timer_file" ] || [ "$current_interval" != "$desired_interval" ]; then
+    cat > "$timer_file" <<EOUNIT
+[Unit]
+Description=Run VCC auto-update periodically
+
+[Timer]
+OnBootSec=30s
+OnUnitActiveSec=${desired_interval}
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+EOUNIT
+    if command -v systemctl >/dev/null 2>&1; then
+      systemctl --user daemon-reload 2>/dev/null || true
+      systemctl --user enable --now vcc-autoupdate.timer 2>/dev/null || true
+    fi
+  fi
+}
+
 detect_vesktop() {
   DETECTED=""; START_CMD=""; KILL_CMD=""; RUNNING="false"
   if command -v flatpak >/dev/null 2>&1; then
@@ -127,6 +187,9 @@ needs_update_js() {
     [ "$local_size" != "$remote_size" ]; return $?
   fi
 }
+
+# Keep timer in sync at every invocation
+ensure_update_timer_interval_matches
 
 [ "${auto_update:-false}" = "true" ] || exit 0
 

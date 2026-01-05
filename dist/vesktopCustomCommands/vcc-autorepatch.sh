@@ -100,13 +100,73 @@ launch_terminal_cmd() {
   if command -v xterm >/dev/null 2>&1; then nohup xterm -e bash -lc "$cmd" >/dev/null 2>&1 & disown; return; fi
 }
 
+# Ensure the systemd timer interval matches the current config values
+ensure_timer_interval_matches() {
+  # Decide desired interval from config
+  local desired_interval=""
+  if [ "${auto_repatch}" = "true" ]; then
+    desired_interval="${autorepatch_interval:-30s}"
+  elif [ "${auto_update}" = "true" ]; then
+    desired_interval="${auto_update_interval:-15m}"
+  else
+    desired_interval=""
+  fi
+
+  # If no feature enabled, disable timer and return
+  if [ -z "$desired_interval" ]; then
+    if command -v systemctl >/dev/null 2>&1; then
+      systemctl --user disable --now vcc-autorepatch.timer 2>/dev/null || true
+    fi
+    return 0
+  fi
+
+  local unit_dir="$HOME/.config/systemd/user"
+  local timer_file="$unit_dir/vcc-autorepatch.timer"
+  mkdir -p "$unit_dir" 2>/dev/null || true
+
+  # Read current interval from timer if present
+  local current_interval=""
+  if [ -f "$timer_file" ]; then
+    current_interval="$(grep -E '^OnUnitActiveSec=' "$timer_file" | head -n1 | sed -E 's/^OnUnitActiveSec=(.*)/\1/')"
+  fi
+
+  # If it differs (or file missing), rewrite timer and reload
+  if [ "$current_interval" != "$desired_interval" ] || [ ! -f "$timer_file" ]; then
+    cat > "$timer_file" <<EOUNIT
+[Unit]
+Description=Run VCC auto-repatch periodically
+
+[Timer]
+OnBootSec=30s
+OnUnitActiveSec=${desired_interval}
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+EOUNIT
+    if command -v systemctl >/dev/null 2>&1; then
+      systemctl --user daemon-reload 2>/dev/null || true
+      systemctl --user enable --now vcc-autorepatch.timer 2>/dev/null || true
+    fi
+  fi
+}
+
 is_patched() {
   local preload_file="$1"
-  # Identique à l'installateur: si la ligne d'origine est encore présente, ce n'est PAS patché
-  if grep -q 'document.addEventListener("DOMContentLoaded",()=>document.documentElement.appendChild(r),{once:!0})' "$preload_file"; then
+  # Check if the file uses the new Vencord structure (c123efd+)
+  if grep -q 'r("VencordInitFileWatchers")' "$preload_file"; then
+    # New structure: patched if we find injection code after the ternary
+    if grep -q 'getTheme\",s\.quickCss\.getEditorTheme));if(location\.protocol' "$preload_file"; then
+      return 0
+    fi
     return 1
+  else
+    # Old structure: patched if the original line no longer exists
+    if grep -q 'document.addEventListener("DOMContentLoaded",()=>document.documentElement.appendChild(r),{once:!0})' "$preload_file"; then
+      return 1
+    fi
+    return 0
   fi
-  return 0
 }
 
 patch_preload() {
@@ -120,7 +180,13 @@ patch_preload() {
     return 1
   fi
 
-  if grep -q 'document.addEventListener("DOMContentLoaded",()=>document.documentElement.appendChild(r),{once:!0})' "$preload_file"; then
+  # Check if it's the new Vencord structure (c123efd+)
+  if grep -q 'r("VencordInitFileWatchers")' "$preload_file"; then
+    # New structure: inject after the main ternary as a separate if statement
+    sed -i "s|getTheme\",s\.quickCss\.getEditorTheme));|getTheme\",s.quickCss.getEditorTheme));if(location.protocol!==\"data:\"){document.readyState===\"complete\"?(()=>{${CODE_TO_INJECT}})():document.addEventListener(\"DOMContentLoaded\",()=>{${CODE_TO_INJECT}},{once:!0})}|" "$preload_file"
+    return $?
+  elif grep -q 'document.addEventListener("DOMContentLoaded",()=>document.documentElement.appendChild(r),{once:!0})' "$preload_file"; then
+    # Old structure: use legacy injection system
     sed -i "s|document\.addEventListener(\"DOMContentLoaded\",()=>document\.documentElement\.appendChild(r),{once:!0})|document.addEventListener(\"DOMContentLoaded\",()=>{document.documentElement.appendChild(r);${CODE_TO_INJECT}},{once:!0})|" "$preload_file"
     return $?
   fi
@@ -194,6 +260,8 @@ main() {
   if [ "${auto_update}" = "true" ]; then
     AUTO_UPDATE_ACTIVE=true
   fi
+  # Keep timer in sync with config on every run (applies changes without manual commands)
+  ensure_timer_interval_matches
   if [ "${auto_repatch}" != "true" ] && [ "$AUTO_UPDATE_ACTIVE" != true ]; then
     exit 0
   fi
@@ -201,8 +269,11 @@ main() {
   if [ ! -f "$PRELOAD_FILE" ]; then
     PRELOAD_FILE=""
   fi
+  # Bootstrap auto-update timer once if needed; avoid double-running updates when the dedicated timer exists
   if [ "$AUTO_UPDATE_ACTIVE" = true ] && [ -x "$HOME/.vesktopCustomCommands/vcc-autoupdate.sh" ]; then
-    "$HOME/.vesktopCustomCommands/vcc-autoupdate.sh" || true
+    if [ ! -f "$HOME/.config/systemd/user/vcc-autoupdate.timer" ]; then
+      "$HOME/.vesktopCustomCommands/vcc-autoupdate.sh" || true
+    fi
   fi
   if [ -n "$PRELOAD_FILE" ] && [ -f "$PRELOAD_FILE" ]; then
     if is_patched "$PRELOAD_FILE"; then

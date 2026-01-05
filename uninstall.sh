@@ -170,12 +170,19 @@ if [ -f "$(normalizePath "$VENCORD_PRELOAD_FILE")" ]; then
     fi
 
     # Pattern-based cleanup (in case backup restore didn't happen or didn't remove injection)
-    # Replace injected variant back to the original listener line
-    if grep -q 'document.addEventListener("DOMContentLoaded",()=>{document.documentElement.appendChild(r);' "$PRELOAD_FILE_NORM"; then
+    # Support both old and new Vencord structures
+    if grep -q 'getTheme",s\.quickCss\.getEditorTheme));if(location\.protocol' "$PRELOAD_FILE_NORM"; then
+        # New structure: remove injection after the ternary
+        sed -i -E \
+            's|getTheme",s\.quickCss\.getEditorTheme\)\);if\(location\.protocol!=="data:"\)\{document\.readyState==="complete"\?\(\(\)=>\{.*\}\)\(\):document\.addEventListener\("DOMContentLoaded",\(\)=>\{.*\},\{once:!0\}\)\}|getTheme",s.quickCss.getEditorTheme))|g' \
+            "$PRELOAD_FILE_NORM"
+        echo "Removed injected code from preload file (new structure)."
+    elif grep -q 'document.addEventListener("DOMContentLoaded",()=>{document.documentElement.appendChild(r);' "$PRELOAD_FILE_NORM"; then
+        # Old structure: remove injection from DOMContentLoaded
         sed -i -E \
             's|document\\.addEventListener\\("DOMContentLoaded",\\(\\)=>\\{document\\.documentElement\\.appendChild\\(r\\);.*\\},\\{once:!0\\}\\)|document.addEventListener("DOMContentLoaded",()=>document.documentElement.appendChild(r),{once:!0})|g' \
             "$PRELOAD_FILE_NORM"
-        echo "Removed injected code from preload file."
+        echo "Removed injected code from preload file (old structure)."
     fi
 fi
 
