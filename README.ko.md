@@ -77,9 +77,8 @@ GitHub에서 새 버전을 사용할 수 있는지 정기적으로 확인하고 
     - `vencord` 폴더에는 Vencord 프리로드 파일에 주입할 파일이 포함되어 있습니다.
     - `vesktopCustomCommands` 폴더에는 음소거/귀먹게 하기용 스크립트와 `.config` 파일이 포함되어 있습니다.
 3. Vencord 프리로드 파일(일반적으로 `~/.config/Vencord/dist/vencordDesktopPreload.js`에 있음)의 백업을 만들 수 있습니다(`cp ~/.config/Vencord/dist/vencordDesktopPreload.js ~/.config/Vencord/dist/vencordDesktopPreload.js.bak`). 나중에 복원하려면 파일을 삭제하고 Vesktop을 시작하여 다시 만들 수 있습니다.
-4. `vencordDesktopPreload_sample.js`의 내용을 Vencord 프리로드 파일(일반적으로 `~/.config/Vencord/dist/vencordDesktopPreload.js`에 있음)에 주입합니다. 주입 방법은 Vencord 버전에 따라 다릅니다:
-    - **구 Vencord 구조(버전 21e6178 이하):** `document.addEventListener("DOMContentLoaded",()=>document.documentElement.appendChild(r),{once:!0})` 줄을 찾아 `document.addEventListener("DOMContentLoaded",()=>{document.documentElement.appendChild(r);(프리로드 샘플 파일 내용 여기)},{once:!0})`로 바꾼 다음 `(프리로드 샘플 파일 내용 여기)`를 `vencordDesktopPreload_sample.js`의 내용으로 바꿉니다.
-    - **신 Vencord 구조(버전 c123efd 이상):** 텍스트 `getTheme",s.quickCss.getEditorTheme))`를 찾아 `getTheme",s.quickCss.getEditorTheme));if(location.protocol!=="data:"){document.readyState==="complete"?(()=>{(프리로드 샘플 파일 내용 여기)})():document.addEventListener("DOMContentLoaded",()=>{(프리로드 샘플 파일 내용 여기)},{once:!0})}`로 바꾼 다음 `(프리로드 샘플 파일 내용 여기)`를 `vencordDesktopPreload_sample.js`의 내용으로 바꿉니다.
+4. `vencordDesktopPreload_sample.js`의 내용을 Vencord 프리로드 파일(일반적으로 `~/.config/Vencord/dist/vencordDesktopPreload.js`에 있음)에 주입합니다:
+    - **범용 방법(모든 Vencord 버전에서 작동):** 파일 끝에 있는 `//# sourceURL=file:///VencordPreload` 줄 바로 앞에 `vencordDesktopPreload_sample.js`의 전체 내용을 삽입합니다.
     - **대안:** 제공된 `vencordDesktopPreload.js`로 전체 파일을 바꿉니다(*권장하지 않음. Vesktop 업데이트 후 VCC가 업데이트되지 않은 경우 신뢰성이 낮고 이 파일이 오래되었을 수 있습니다*).
 5. Vencord 경로(일반적으로 `~/.config/Vencord/dist/`에 있음)에 `vesktopCustomCommands` 디렉토리를 만들고 그 안에 `customCode.js` 파일을 넣습니다.
 6. `~/.vesktopCustomCommands` 디렉토리를 만들고 그 안에 `mute.sh` 및 `deafen.sh` 파일을 넣습니다.

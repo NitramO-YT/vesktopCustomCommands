@@ -77,9 +77,8 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/NitramO-YT/vesktopCustom
     - `vencord` 文件夹包含要注入 Vencord 预加载文件的文件。
     - `vesktopCustomCommands` 文件夹包含用于静音/拒听的脚本和 `.config` 文件。
 3. 您可以备份 Vencord 预加载文件（通常位于 `~/.config/Vencord/dist/vencordDesktopPreload.js`，使用 `cp ~/.config/Vencord/dist/vencordDesktopPreload.js ~/.config/Vencord/dist/vencordDesktopPreload.js.bak`），如果您想稍后恢复它，可以删除该文件并启动 Vesktop 以重新创建它。
-4. 将 `vencordDesktopPreload_sample.js` 的内容注入到您的 Vencord 预加载文件中（通常位于 `~/.config/Vencord/dist/vencordDesktopPreload.js`）。注入方法取决于您的 Vencord 版本：
-    - **旧 Vencord 结构（版本 21e6178 或更早）：** 查找行 `document.addEventListener("DOMContentLoaded",()=>document.documentElement.appendChild(r),{once:!0})` 并将其替换为 `document.addEventListener("DOMContentLoaded",()=>{document.documentElement.appendChild(r);(预加载示例文件内容在此)},{once:!0})`，然后将 `(预加载示例文件内容在此)` 替换为 `vencordDesktopPreload_sample.js` 的内容。
-    - **新 Vencord 结构（版本 c123efd 或更新）：** 查找文本 `getTheme",s.quickCss.getEditorTheme))` 并将其替换为 `getTheme",s.quickCss.getEditorTheme));if(location.protocol!=="data:"){document.readyState==="complete"?(()=>{(预加载示例文件内容在此)})():document.addEventListener("DOMContentLoaded",()=>{(预加载示例文件内容在此)},{once:!0})}`，然后将 `(预加载示例文件内容在此)` 替换为 `vencordDesktopPreload_sample.js` 的内容。
+4. 将 `vencordDesktopPreload_sample.js` 的内容注入到您的 Vencord 预加载文件中（通常位于 `~/.config/Vencord/dist/vencordDesktopPreload.js`）：
+    - **通用方法（适用于所有 Vencord 版本）：** 在文件末尾的 `//# sourceURL=file:///VencordPreload` 行之前插入 `vencordDesktopPreload_sample.js` 的全部内容。
     - **替代方法：** 用提供的 `vencordDesktopPreload.js` 替换整个文件（*不推荐，因为如果 Vesktop 更新后 VCC 没有更新，可靠性较低，此文件可能已过时*）。
 5. 在您的 Vencord 路径中创建一个 `vesktopCustomCommands` 目录（通常位于 `~/.config/Vencord/dist/`）并将 `customCode.js` 文件放入其中。
 6. 创建一个 `~/.vesktopCustomCommands` 目录并将 `mute.sh` 和 `deafen.sh` 文件放入其中。

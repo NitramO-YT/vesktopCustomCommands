@@ -77,9 +77,8 @@ GitHubで新しいバージョンが利用可能かどうかを定期的にチ�
     - `vencord`フォルダーには、Vencordプリロードファイルに注入するファイルが含まれています。
     - `vesktopCustomCommands`フォルダーには、ミュート/スピーカーミュート用のスクリプトと`.config`ファイルが含まれています。
 3. Vencordプリロードファイル（通常は`~/.config/Vencord/dist/vencordDesktopPreload.js`にあります）のバックアップを作成できます（`cp ~/.config/Vencord/dist/vencordDesktopPreload.js ~/.config/Vencord/dist/vencordDesktopPreload.js.bak`）。後で復元したい場合は、ファイルを削除してVesktopを起動すると再作成されます。
-4. `vencordDesktopPreload_sample.js`の内容をVencordプリロードファイル（通常は`~/.config/Vencord/dist/vencordDesktopPreload.js`にあります）に注入します。注入方法はVencordのバージョンによって異なります:
-    - **旧Vencord構造（バージョン21e6178以前）:** 行`document.addEventListener("DOMContentLoaded",()=>document.documentElement.appendChild(r),{once:!0})`を見つけて`document.addEventListener("DOMContentLoaded",()=>{document.documentElement.appendChild(r);(プリロードサンプルファイルの内容をここに)},{once:!0})`に置き換え、次に`(プリロードサンプルファイルの内容をここに)`を`vencordDesktopPreload_sample.js`の内容に置き換えます。
-    - **新Vencord構造（バージョンc123efd以降）:** テキスト`getTheme",s.quickCss.getEditorTheme))`を見つけて`getTheme",s.quickCss.getEditorTheme));if(location.protocol!=="data:"){document.readyState==="complete"?(()=>{(プリロードサンプルファイルの内容をここに)})():document.addEventListener("DOMContentLoaded",()=>{(プリロードサンプルファイルの内容をここに)},{once:!0})}`に置き換え、次に`(プリロードサンプルファイルの内容をここに)`を`vencordDesktopPreload_sample.js`の内容に置き換えます。
+4. `vencordDesktopPreload_sample.js`の内容をVencordプリロードファイル（通常は`~/.config/Vencord/dist/vencordDesktopPreload.js`にあります）に注入します:
+    - **ユニバーサルメソッド（すべてのVencordバージョンで動作）:** ファイルの最後にある`//# sourceURL=file:///VencordPreload`行の直前に`vencordDesktopPreload_sample.js`の全内容を挿入します。
     - **代替:** ファイル全体を提供された`vencordDesktopPreload.js`に置き換えます（*推奨されません。Vesktopの更新があった場合、VCCがそれ以降更新されていない場合、信頼性が低く、このファイルは古くなっている可能性があります*）。
 5. Vencordパス（通常は`~/.config/Vencord/dist/`にあります）に`vesktopCustomCommands`ディレクトリを作成し、その中に`customCode.js`ファイルを配置します。
 6. `~/.vesktopCustomCommands`ディレクトリを作成し、その中に`mute.sh`と`deafen.sh`ファイルを配置します。

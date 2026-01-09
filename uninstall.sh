@@ -170,19 +170,11 @@ if [ -f "$(normalizePath "$VENCORD_PRELOAD_FILE")" ]; then
     fi
 
     # Pattern-based cleanup (in case backup restore didn't happen or didn't remove injection)
-    # Support both old and new Vencord structures
-    if grep -q 'getTheme",s\.quickCss\.getEditorTheme));if(location\.protocol' "$PRELOAD_FILE_NORM"; then
-        # New structure: remove injection after the ternary
-        sed -i -E \
-            's|getTheme",s\.quickCss\.getEditorTheme\)\);if\(location\.protocol!=="data:"\)\{document\.readyState==="complete"\?\(\(\)=>\{.*\}\)\(\):document\.addEventListener\("DOMContentLoaded",\(\)=>\{.*\},\{once:!0\}\)\}|getTheme",s.quickCss.getEditorTheme))|g' \
-            "$PRELOAD_FILE_NORM"
-        echo "Removed injected code from preload file (new structure)."
-    elif grep -q 'document.addEventListener("DOMContentLoaded",()=>{document.documentElement.appendChild(r);' "$PRELOAD_FILE_NORM"; then
-        # Old structure: remove injection from DOMContentLoaded
-        sed -i -E \
-            's|document\\.addEventListener\\("DOMContentLoaded",\\(\\)=>\\{document\\.documentElement\\.appendChild\\(r\\);.*\\},\\{once:!0\\}\\)|document.addEventListener("DOMContentLoaded",()=>document.documentElement.appendChild(r),{once:!0})|g' \
-            "$PRELOAD_FILE_NORM"
-        echo "Removed injected code from preload file (old structure)."
+    # Universal cleanup: remove our IIFE before the source map
+    if grep -q '})(__dirname);' "$PRELOAD_FILE_NORM"; then
+        # Remove everything between the last semicolon before our IIFE and the source map
+        sed -i -E 's|\(function\(vencordPath\)\{[^}]*\}\)\(__dirname\);||g' "$PRELOAD_FILE_NORM"
+        echo "Removed injected code from preload file."
     fi
 fi
 
