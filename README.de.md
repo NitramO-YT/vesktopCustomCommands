@@ -2,7 +2,7 @@
 
 # Einführung in vesktopCustomCommands (VCC)
 VCC ist ein System, mit dem Sie globale Tastenkombinationen zum Stummschalten und Taubschalten zu Vesktop hinzufügen können. Es ist eine Übergangslösung für den Mangel an globalen Tastenkombinationen in Vesktop, bis das Vesktop-Team eine bessere Lösung findet.
-Es handelt sich im Grunde um eine Reihe von Skripten (`mute.sh` & `deafen.sh`), die Sie über eine benutzerdefinierte globale Tastenkombination in Ihrem System aufrufen können, um sich in Vesktop stumm zu schalten und taub zu schalten. Diese Aktionen werden in Vesktop ausgelöst, indem ein benutzerdefinierter Javascript-Code in die Vencord-Preload-Datei eingefügt wird.
+Es handelt sich im Grunde um eine Reihe von Skripten (`mute.sh` & `deafen.sh`), die Sie über eine benutzerdefinierte globale Tastenkombination in Ihrem System aufrufen können, um sich in Vesktop stumm zu schalten und taub zu schalten. Diese Aktionen werden in Vesktop ausgelöst, indem ein benutzerdefinierter Javascript-Code in die Vencord-Hauptdatei eingefügt wird.
 
 # Tastenkombinationen-Konfiguration in Ihrem System
 Sie müssen eine benutzerdefinierte globale Tastenkombination in Ihrem System konfigurieren, um die Skripte `mute.sh` und `deafen.sh` im Ordner `~/.vesktopCustomCommands/` aufzurufen.
@@ -26,9 +26,9 @@ Hinweis: Wenn bereits eine Konfigurationsdatei unter `~/.vesktopCustomCommands/.
 
 ### Optional: Automatisches Neupatchen
 
-Während der Installation können Sie ein automatisches Neuropatch-System aktivieren, das regelmäßig überprüft, ob der VCC-Patch noch in der Vencord-Preload-Datei vorhanden ist, und ihn erneut anwendet, wenn er entfernt wurde (z. B. nach einem Update oder Zurücksetzen von Vencord/Vesktop).
+Während der Installation können Sie ein automatisches Neuropatch-System aktivieren, das regelmäßig überprüft, ob der VCC-Patch noch in der Vencord-Hauptdatei vorhanden ist, und ihn erneut anwendet, wenn er entfernt wurde (z. B. nach einem Update oder Zurücksetzen von Vencord/Vesktop).
 
-- Warum ist es notwendig? Vesktop/Vencord-Updates oder bestimmte Startszenarien können die Preload-Datei in ihren ursprünglichen Zustand zurückversetzen und dabei die VCC-Injektion entfernen. Das automatische Neupatchen stellt sicher, dass Ihre Tastenkombinationen ohne manuelles Eingreifen weiterhin funktionieren.
+- Warum ist es notwendig? Vesktop/Vencord-Updates oder bestimmte Startszenarien können die Hauptdatei in ihren ursprünglichen Zustand zurückversetzen und dabei die VCC-Injektion entfernen. Das automatische Neupatchen stellt sicher, dass Ihre Tastenkombinationen ohne manuelles Eingreifen weiterhin funktionieren.
 - Die Einstellungen werden in `~/.vesktopCustomCommands/.config` gespeichert:
   - `auto_repatch="true|false"` (Standard: `false`)
   - `auto_restart="true|false"` (Standard: `false`) – falls aktiviert, wird Vesktop nach einem Neupatch automatisch neu gestartet. Sie können dies später mit den folgenden Befehlen umschalten.
@@ -74,12 +74,11 @@ Sie können ein automatisches Aktualisierungssystem aktivieren, das regelmäßig
 ## Manuelle Installation
 1. Laden Sie den Ordner `dist` aus dem Repository oder dessen Inhalt herunter.
 2. `dist` ist in zwei Teile unterteilt:
-    - Der Ordner `vencord` enthält die Dateien, die in die Vencord-Preload-Datei eingefügt werden sollen.
+    - Der Ordner `vencord` enthält die Dateien, die in die Vencord-Hauptdatei eingefügt werden sollen.
     - Der Ordner `vesktopCustomCommands` enthält die Skripte zum Stummschalten/Taubschalten und die `.config`-Datei.
-3. Sie können eine Sicherung Ihrer Vencord-Preload-Datei erstellen (normalerweise unter `~/.config/Vencord/dist/vencordDesktopPreload.js`, also `cp ~/.config/Vencord/dist/vencordDesktopPreload.js ~/.config/Vencord/dist/vencordDesktopPreload.js.bak`) oder nicht. Wenn Sie sie später wiederherstellen möchten, können Sie die Datei löschen und Vesktop starten, um sie neu zu erstellen.
-4. Fügen Sie den Inhalt von `vencordDesktopPreload_sample.js` in Ihre Vencord-Preload-Datei ein (normalerweise unter `~/.config/Vencord/dist/vencordDesktopPreload.js`):
-    - **UNIVERSELLE METHODE (funktioniert mit allen Vencord-Versionen):** Fügen Sie den gesamten Inhalt von `vencordDesktopPreload_sample.js` direkt vor der Zeile `//# sourceURL=file:///VencordPreload` am Ende der Datei ein.
-    - **Alternative:** Ersetzen Sie die gesamte Datei durch die bereitgestellte `vencordDesktopPreload.js` (*NICHT EMPFOHLEN, da im Falle eines Vesktop-Updates, wenn VCC seitdem nicht aktualisiert wurde, es weniger zuverlässig ist und diese Datei möglicherweise veraltet ist*).
+3. Sie können eine Sicherung Ihrer Vencord-Hauptdatei erstellen (normalerweise unter `~/.config/Vencord/dist/vencordDesktopMain.js`, also `cp ~/.config/Vencord/dist/vencordDesktopMain.js ~/.config/Vencord/dist/vencordDesktopMain.js.bak`) oder nicht. Wenn Sie sie später wiederherstellen möchten, können Sie die Datei löschen und Vesktop starten, um sie neu zu erstellen.
+4. Fügen Sie den Inhalt von `vencordDesktopMain_sample.js` in Ihre Vencord-Hauptdatei ein (normalerweise unter `~/.config/Vencord/dist/vencordDesktopMain.js`):
+    - Fügen Sie den gesamten Inhalt von `vencordDesktopMain_sample.js` direkt vor der Zeile `//# sourceURL=` am Ende der Datei ein.
 5. Erstellen Sie ein Verzeichnis `vesktopCustomCommands` in Ihrem Vencord-Pfad (normalerweise unter `~/.config/Vencord/dist/`) und legen Sie die Datei `customCode.js` dort ab.
 6. Erstellen Sie ein Verzeichnis `~/.vesktopCustomCommands` und legen Sie die Dateien `mute.sh` und `deafen.sh` dort ab.
 7. Fügen Sie Berechtigungen zu den Skripten `mute.sh` und `deafen.sh` hinzu:
@@ -117,7 +116,7 @@ Wenn Einstellungen entfernt werden, werden auch der automatische Neuropatch-Dien
 3. Entfernen Sie den Ordner `~/.vesktopCustomCommands`.
 4. Entfernen Sie die Datei `customCode.js` in Ihrem Vencord-Pfad `~/.config/Vencord/dist/vesktopCustomCommands/`.
 5. Entfernen Sie den Ordner `vesktopCustomCommands` in Ihrem Vencord-Pfad `~/.config/Vencord/dist/`.
-6. Entfernen Sie den eingefügten Code in Ihrer Vencord-Preload-Datei (normalerweise unter `~/.config/Vencord/dist/vencordDesktopPreload.js`) oder ersetzen Sie sie durch die Sicherung, die Sie erstellt haben, falls vorhanden. (Sie können die Datei auch löschen und Vesktop starten, um sie neu zu erstellen).
+6. Entfernen Sie den eingefügten Code in Ihrer Vencord-Hauptdatei (normalerweise unter `~/.config/Vencord/dist/vencordDesktopMain.js`) oder ersetzen Sie sie durch die Sicherung, die Sie erstellt haben, falls vorhanden. (Sie können die Datei auch löschen und Vesktop starten, um sie neu zu erstellen).
 7. Starten Sie Vesktop neu, um die Änderungen anzuwenden.
 
 ---

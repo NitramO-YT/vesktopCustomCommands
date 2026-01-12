@@ -2,7 +2,7 @@
 
 # vesktopCustomCommands (VCC) の紹介
 VCCは、Vesktopにミュートとスピーカーミュートのグローバルショートカットを追加できるシステムです。これは、Vesktopチームがより良いソリューションを見つけるまでの、Vesktopにおけるグローバルショートカットの欠如に対する一時的な解決策です。
-基本的には、システムのカスタムグローバルショートカットから呼び出すことができる一連のスクリプト（`mute.sh`と`deafen.sh`）で、Vesktopで自分をミュート・スピーカーミュートにし、VencordプリロードファイルにカスタムJavascriptコードを注入することでVesktopでこれらのアクションをトリガーします。
+基本的には、システムのカスタムグローバルショートカットから呼び出すことができる一連のスクリプト（`mute.sh`と`deafen.sh`）で、Vesktopで自分をミュート・スピーカーミュートにし、VencordメインファイルにカスタムJavascriptコードを注入することでVesktopでこれらのアクションをトリガーします。
 
 # システムでのショートカット設定
 `~/.vesktopCustomCommands/`フォルダーにある`mute.sh`と`deafen.sh`スクリプトを呼び出すために、システムでカスタムグローバルショートカットを設定する必要があります。
@@ -26,9 +26,9 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/NitramO-YT/vesktopCustom
 
 ### オプション: 自動再パッチ
 
-インストール中に、VCCパッチがVencordプリロードファイルにまだ存在するかどうかを定期的にチェックし、削除された場合（例：Vencord/Vesktopの更新またはリセット後）に再適用する自動再パッチシステムを有効にできます。
+インストール中に、VCCパッチがVencordメインファイルにまだ存在するかどうかを定期的にチェックし、削除された場合（例：Vencord/Vesktopの更新またはリセット後）に再適用する自動再パッチシステムを有効にできます。
 
-- なぜ必要なのか？Vesktop/Vencordの更新や特定の起動シナリオにより、プリロードファイルが元の状態に復元され、VCCインジェクションが削除される可能性があります。自動再パッチにより、手動介入なしにショートカットが動作し続けることが保証されます。
+- なぜ必要なのか？Vesktop/Vencordの更新や特定の起動シナリオにより、メインファイルが元の状態に復元され、VCCインジェクションが削除される可能性があります。自動再パッチにより、手動介入なしにショートカットが動作し続けることが保証されます。
 - 設定は`~/.vesktopCustomCommands/.config`に保存されます:
   - `auto_repatch="true|false"` (デフォルト: `false`)
   - `auto_restart="true|false"` (デフォルト: `false`) – 有効にすると、再パッチ後にVesktopが自動的に再起動されます。以下のコマンドで後から切り替えることができます。
@@ -74,12 +74,11 @@ GitHubで新しいバージョンが利用可能かどうかを定期的にチ�
 ## 手動インストール
 1. リポジトリから`dist`フォルダーまたはその内容をダウンロードします。
 2. `dist`は2つの部分に分かれています:
-    - `vencord`フォルダーには、Vencordプリロードファイルに注入するファイルが含まれています。
+    - `vencord`フォルダーには、Vencordメインファイルに注入するファイルが含まれています。
     - `vesktopCustomCommands`フォルダーには、ミュート/スピーカーミュート用のスクリプトと`.config`ファイルが含まれています。
-3. Vencordプリロードファイル（通常は`~/.config/Vencord/dist/vencordDesktopPreload.js`にあります）のバックアップを作成できます（`cp ~/.config/Vencord/dist/vencordDesktopPreload.js ~/.config/Vencord/dist/vencordDesktopPreload.js.bak`）。後で復元したい場合は、ファイルを削除してVesktopを起動すると再作成されます。
-4. `vencordDesktopPreload_sample.js`の内容をVencordプリロードファイル（通常は`~/.config/Vencord/dist/vencordDesktopPreload.js`にあります）に注入します:
-    - **ユニバーサルメソッド（すべてのVencordバージョンで動作）:** ファイルの最後にある`//# sourceURL=file:///VencordPreload`行の直前に`vencordDesktopPreload_sample.js`の全内容を挿入します。
-    - **代替:** ファイル全体を提供された`vencordDesktopPreload.js`に置き換えます（*推奨されません。Vesktopの更新があった場合、VCCがそれ以降更新されていない場合、信頼性が低く、このファイルは古くなっている可能性があります*）。
+3. Vencordメインファイル（通常は`~/.config/Vencord/dist/vencordDesktopMain.js`にあります）のバックアップを作成できます（`cp ~/.config/Vencord/dist/vencordDesktopMain.js ~/.config/Vencord/dist/vencordDesktopMain.js.bak`）。後で復元したい場合は、ファイルを削除してVesktopを起動すると再作成されます。
+4. `vencordDesktopMain_sample.js`の内容をVencordメインファイル（通常は`~/.config/Vencord/dist/vencordDesktopMain.js`にあります）に注入します:
+    - ファイルの最後にある`//# sourceURL=`行の直前に`vencordDesktopMain_sample.js`の全内容を挿入します。
 5. Vencordパス（通常は`~/.config/Vencord/dist/`にあります）に`vesktopCustomCommands`ディレクトリを作成し、その中に`customCode.js`ファイルを配置します。
 6. `~/.vesktopCustomCommands`ディレクトリを作成し、その中に`mute.sh`と`deafen.sh`ファイルを配置します。
 7. `mute.sh`と`deafen.sh`スクリプトに権限を追加します:
@@ -117,7 +116,7 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/NitramO-YT/vesktopCustom
 3. `~/.vesktopCustomCommands`フォルダーを削除します。
 4. Vencordパス`~/.config/Vencord/dist/vesktopCustomCommands/`にある`customCode.js`ファイルを削除します。
 5. Vencordパス`~/.config/Vencord/dist/`にある`vesktopCustomCommands`フォルダーを削除します。
-6. Vencordプリロードファイル（通常は`~/.config/Vencord/dist/vencordDesktopPreload.js`にあります）の注入されたコードを削除するか、作成したバックアップがある場合はそれで置き換えます。（ファイルを削除してVesktopを起動して再作成することもできます）。
+6. Vencordメインファイル（通常は`~/.config/Vencord/dist/vencordDesktopMain.js`にあります）の注入されたコードを削除するか、作成したバックアップがある場合はそれで置き換えます。（ファイルを削除してVesktopを起動して再作成することもできます）。
 7. Vesktopを再起動して変更を適用します。
 
 ---

@@ -2,7 +2,7 @@
 
 # Introducción a vesktopCustomCommands (VCC)
 VCC es un sistema que te permite agregar atajos globales para silenciar el micrófono y ensordecer en Vesktop. Es una solución temporal ante la falta de atajos globales en Vesktop por ahora, hasta que el equipo de Vesktop encuentre una mejor solución.
-Básicamente es un conjunto de scripts (`mute.sh` y `deafen.sh`) que puedes llamar desde un atajo global personalizado en tu sistema para silenciarte y ensordecerte en Vesktop, y desencadena estas acciones en Vesktop mediante la inyección de un código Javascript personalizado en el archivo de precarga de Vencord.
+Básicamente es un conjunto de scripts (`mute.sh` y `deafen.sh`) que puedes llamar desde un atajo global personalizado en tu sistema para silenciarte y ensordecerte en Vesktop, y desencadena estas acciones en Vesktop mediante la inyección de un código Javascript personalizado en el archivo principal de Vencord.
 
 # Configuración de atajos en tu sistema
 Necesitas configurar un atajo global personalizado en tu sistema para llamar a los scripts `mute.sh` y `deafen.sh` en la carpeta `~/.vesktopCustomCommands/`.
@@ -26,9 +26,9 @@ Nota: Si ya existe un archivo de configuración en `~/.vesktopCustomCommands/.co
 
 ### Opcional: Reparcheo automático
 
-Durante la instalación, puedes habilitar un sistema de reparcheo automático que verifica periódicamente si el parche de VCC todavía está presente en el archivo de precarga de Vencord y lo vuelve a aplicar si se ha eliminado (por ejemplo, después de una actualización o reinicio de Vencord/Vesktop).
+Durante la instalación, puedes habilitar un sistema de reparcheo automático que verifica periódicamente si el parche de VCC todavía está presente en el archivo principal de Vencord y lo vuelve a aplicar si se ha eliminado (por ejemplo, después de una actualización o reinicio de Vencord/Vesktop).
 
-- ¿Por qué es necesario? Las actualizaciones de Vesktop/Vencord o ciertos escenarios de inicio pueden restaurar el archivo de precarga a su estado original, eliminando la inyección de VCC. El reparcheo automático asegura que tus atajos sigan funcionando sin intervención manual.
+- ¿Por qué es necesario? Las actualizaciones de Vesktop/Vencord o ciertos escenarios de inicio pueden restaurar el archivo principal a su estado original, eliminando la inyección de VCC. El reparcheo automático asegura que tus atajos sigan funcionando sin intervención manual.
 - La configuración se almacena en `~/.vesktopCustomCommands/.config`:
   - `auto_repatch="true|false"` (predeterminado: `false`)
   - `auto_restart="true|false"` (predeterminado: `false`) – si está habilitado, Vesktop se reiniciará automáticamente después de un reparcheo. Puedes activarlo/desactivarlo más tarde con los comandos siguientes.
@@ -74,12 +74,11 @@ Puedes habilitar un sistema de actualización automática que verifica periódic
 ## Instalación manual
 1. Descarga la carpeta `dist` del repositorio o su contenido.
 2. `dist` está separado en dos partes:
-    - La carpeta `vencord` contiene los archivos para inyectar en el archivo de precarga de Vencord.
+    - La carpeta `vencord` contiene los archivos para inyectar en el archivo principal de Vencord.
     - La carpeta `vesktopCustomCommands` contiene los scripts para silenciar/ensordecer y el archivo `.config`.
-3. Puedes hacer una copia de seguridad de tu archivo de precarga de Vencord (generalmente ubicado en `~/.config/Vencord/dist/vencordDesktopPreload.js` con `cp ~/.config/Vencord/dist/vencordDesktopPreload.js ~/.config/Vencord/dist/vencordDesktopPreload.js.bak`) o no, si quieres restaurarlo más tarde puedes eliminar el archivo e iniciar Vesktop para recrearlo.
-4. Inyecta el contenido de `vencordDesktopPreload_sample.js` en tu archivo de precarga de Vencord (generalmente ubicado en `~/.config/Vencord/dist/vencordDesktopPreload.js`):
-    - **MÉTODO UNIVERSAL (funciona con todas las versiones de Vencord):** Inserta el contenido completo de `vencordDesktopPreload_sample.js` justo antes de la línea `//# sourceURL=file:///VencordPreload` al final del archivo.
-    - **Alternativa:** Reemplaza el archivo completo con el `vencordDesktopPreload.js` proporcionado (*NO RECOMENDADO, ya que en caso de una actualización de Vesktop, si VCC no se ha actualizado desde entonces, es menos confiable y este archivo puede estar obsoleto*).
+3. Puedes hacer una copia de seguridad de tu archivo principal de Vencord (generalmente ubicado en `~/.config/Vencord/dist/vencordDesktopMain.js` con `cp ~/.config/Vencord/dist/vencordDesktopMain.js ~/.config/Vencord/dist/vencordDesktopMain.js.bak`) o no, si quieres restaurarlo más tarde puedes eliminar el archivo e iniciar Vesktop para recrearlo.
+4. Inyecta el contenido de `vencordDesktopMain_sample.js` en tu archivo principal de Vencord (generalmente ubicado en `~/.config/Vencord/dist/vencordDesktopMain.js`):
+    - Inserta el contenido completo de `vencordDesktopMain_sample.js` justo antes de la línea `//# sourceURL=` al final del archivo.
 5. Crea un directorio `vesktopCustomCommands` en tu ruta de Vencord (generalmente ubicado en `~/.config/Vencord/dist/`) y coloca el archivo `customCode.js` en él.
 6. Crea un directorio `~/.vesktopCustomCommands` y coloca los archivos `mute.sh` y `deafen.sh` en él.
 7. Agrega permisos a los scripts `mute.sh` y `deafen.sh`:
@@ -117,7 +116,7 @@ Si se elimina la configuración, también se eliminan el servicio/temporizador d
 3. Elimina la carpeta `~/.vesktopCustomCommands`.
 4. Elimina el archivo `customCode.js` en tu ruta de Vencord `~/.config/Vencord/dist/vesktopCustomCommands/`.
 5. Elimina la carpeta `vesktopCustomCommands` en tu ruta de Vencord `~/.config/Vencord/dist/`.
-6. Elimina el código inyectado en tu archivo de precarga de Vencord (generalmente ubicado en `~/.config/Vencord/dist/vencordDesktopPreload.js`) o reemplázalo con la copia de seguridad que hiciste si la tienes. (También puedes eliminar el archivo e iniciar Vesktop para recrearlo).
+6. Elimina el código inyectado en tu archivo principal de Vencord (generalmente ubicado en `~/.config/Vencord/dist/vencordDesktopMain.js`) o reemplázalo con la copia de seguridad que hiciste si la tienes. (También puedes eliminar el archivo e iniciar Vesktop para recrearlo).
 7. Reinicia Vesktop para aplicar los cambios.
 
 ---

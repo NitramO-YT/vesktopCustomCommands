@@ -2,7 +2,7 @@
 
 # Introduction to vesktopCustomCommands (VCC)
 VCC is a system that allows you to add a mute and deafen global shortcut to Vesktop, it is a workaround to the lack of global shortcuts in Vesktop for now and until a better solution is found by the Vesktop team.
-It's basically a set of scripts (`mute.sh` & `deafen.sh`) that you can call from a custom global shortcut in your system to mute and deafen yourself in Vesktop, and it triggers theses actions in Vesktop by injecting a custom Javascript code in the Vencord preload file.
+It's basically a set of scripts (`mute.sh` & `deafen.sh`) that you can call from a custom global shortcut in your system to mute and deafen yourself in Vesktop, and it triggers theses actions in Vesktop by injecting a custom Javascript code in the Vencord main file.
 
 # Shortcuts configuration in your system
 You need to configure a custom global shortcut in your system to call the scripts `mute.sh` and `deafen.sh` in `~/.vesktopCustomCommands/` folder.
@@ -26,9 +26,9 @@ Note: If a config file already exists at `~/.vesktopCustomCommands/.config`, the
 
 ### Optional: Automatic repatch
 
-During installation, you can enable an automatic repatch system that periodically checks whether the VCC patch is still present in the Vencord preload file and re-applies it if it has been removed (e.g. after an update or a reset of Vencord/Vesktop).
+During installation, you can enable an automatic repatch system that periodically checks whether the VCC patch is still present in the Vencord main file and re-applies it if it has been removed (e.g. after an update or a reset of Vencord/Vesktop).
 
-- Why is it needed? Vesktop/Vencord updates or certain startup scenarios can restore the preload file to its original state, removing the VCC injection. The auto-repatch ensures your shortcuts keep working without manual intervention.
+- Why is it needed? Vesktop/Vencord updates or certain startup scenarios can restore the main file to its original state, removing the VCC injection. The auto-repatch ensures your shortcuts keep working without manual intervention.
 - Settings are stored in `~/.vesktopCustomCommands/.config`:
   - `auto_repatch="true|false"` (default: `false`)
   - `auto_restart="true|false"` (default: `false`) – if enabled, Vesktop will be automatically restarted after a repatch. You can toggle this later with the commands below.
@@ -74,12 +74,11 @@ You can enable an automatic update system that periodically checks if a newer ve
 ## Manual installation
 1. Download the `dist` folder from the repository or its content.
 2. `dist` is separated in two parts:
-    - `vencord` folder contains the files to inject in the Vencord preload file.
+    - `vencord` folder contains the files to inject in the Vencord main file.
     - `vesktopCustomCommands` folder contains the scripts to mute/deafen and the `.config` file.
-3. You can make a backup of your Vencord preload file (usually located in `~/.config/Vencord/dist/vencordDesktopPreload.js` so `cp ~/.config/Vencord/dist/vencordDesktopPreload.js ~/.config/Vencord/dist/vencordDesktopPreload.js.bak`) or not, if you want to restore it later you can delete the file and start Vesktop to recreate it.
-4. Inject the content of `vencordDesktopPreload_sample.js` in your Vencord preload file (usually located in `~/.config/Vencord/dist/vencordDesktopPreload.js`):
-    - **UNIVERSAL METHOD (works with all Vencord versions):** Insert the entire content of `vencordDesktopPreload_sample.js` just before the line `//# sourceURL=file:///VencordPreload` at the end of the file.
-    - **Alternative:** Replace the entire file with the provided `vencordDesktopPreload.js` (*NOT RECOMMENDED, as in the event of a Vesktop update, if VCC has not been updated since then, it is less reliable, and this file may be obsolete*).
+3. You can make a backup of your Vencord main file (usually located in `~/.config/Vencord/dist/vencordDesktopMain.js` so `cp ~/.config/Vencord/dist/vencordDesktopMain.js ~/.config/Vencord/dist/vencordDesktopMain.js.bak`) or not, if you want to restore it later you can delete the file and start Vesktop to recreate it.
+4. Inject the content of `vencordDesktopMain_sample.js` in your Vencord main file (usually located in `~/.config/Vencord/dist/vencordDesktopMain.js`):
+    - Insert the entire content of `vencordDesktopMain_sample.js` just before the line `//# sourceURL=` at the end of the file.
 5. Make a dir `vesktopCustomCommands` in your Vencord path (usually located in `~/.config/Vencord/dist/`) and put the file `customCode.js` in it.
 6. Make a dir `~/.vesktopCustomCommands` and put the files `mute.sh` and `deafen.sh` in it.
 7. Add permissions to the scripts `mute.sh` and `deafen.sh`:
@@ -117,7 +116,7 @@ If settings are removed, the auto-repatch service/timer and helper scripts are a
 3. Remove the `~/.vesktopCustomCommands` folder.
 4. Remove the `customCode.js` file in your Vencord path `~/.config/Vencord/dist/vesktopCustomCommands/`.
 5. Remove the `vesktopCustomCommands` folder in your Vencord path `~/.config/Vencord/dist/`.
-6. Remove the injected code in your Vencord preload file (usually located in `~/.config/Vencord/dist/vencordDesktopPreload.js`) or replace it with the backup you made if you did. (You can also delete the file and start Vesktop to recreate it).
+6. Remove the injected code in your Vencord main file (usually located in `~/.config/Vencord/dist/vencordDesktopMain.js`) or replace it with the backup you made if you did. (You can also delete the file and start Vesktop to recreate it).
 7. Restart Vesktop to apply the changes.
 
 ---

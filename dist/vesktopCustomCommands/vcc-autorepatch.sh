@@ -152,18 +152,18 @@ EOUNIT
 }
 
 is_patched() {
-  local preload_file="$1"
-  # Universal detection: check for our IIFE signature
-  if grep -q '})(__dirname);' "$preload_file"; then
+  local main_file="$1"
+  # Universal detection: check for our VCC signature in the injection code
+  if grep -q '\[VesktopCustomCommands\]' "$main_file"; then
     return 0
   fi
   return 1
 }
 
-patch_preload() {
-  local preload_file="$1"
-  local sample_url="https://raw.githubusercontent.com/NitramO-YT/vesktopCustomCommands/main/dist/vencord/vencordDesktopPreload_sample.js"
-  # Make sure the custom code file exists before patching, exactly like the installateur
+patch_main() {
+  local main_file="$1"
+  local sample_url="https://raw.githubusercontent.com/NitramO-YT/vesktopCustomCommands/main/dist/vencord/vencordDesktopMain_sample.js"
+  # Make sure the custom code file exists before patching, exactly like the installer
   ensure_custom_code || true
   CODE_TO_INJECT=$(curl -s -w "%{http_code}" "$sample_url") || return 1
   HTTP_RESPONSE="${CODE_TO_INJECT: -3}"; CODE_TO_INJECT="${CODE_TO_INJECT%???}"
@@ -172,8 +172,8 @@ patch_preload() {
   fi
 
   # Universal injection: inject before the source map (works with all Vencord versions)
-  if grep -q '//# sourceURL=' "$preload_file"; then
-    sed -i "s|//# sourceURL=|${CODE_TO_INJECT}//# sourceURL=|" "$preload_file"
+  if grep -q '//# sourceURL=' "$main_file"; then
+    sed -i "s|//# sourceURL=|${CODE_TO_INJECT}//# sourceURL=|" "$main_file"
     return $?
   fi
 
@@ -218,7 +218,7 @@ restart_vesktop() {
 timeTriedGuiPrompt=0
 tryGuiPrompt() {
   if prompt_gui_yesno "VCC for Vesktop/Vencord repatch" "A repatch is required. Do you want to apply it now?"; then
-    if patch_preload "$PRELOAD_FILE"; then
+    if patch_main "$MAIN_FILE"; then
       if prompt_gui_yesno "VCC for Vesktop/Vencord repatch" "Repatch done. Do you want to restart Vesktop now?"; then
         # In interactive mode, we restart explicitly if the user accepts.
         # If restart fails, open the interactive helper in a terminal as fallback.
@@ -251,9 +251,9 @@ main() {
   if [ "${auto_repatch}" != "true" ] && [ "$AUTO_UPDATE_ACTIVE" != true ]; then
     exit 0
   fi
-  PRELOAD_FILE="$(normalizePath "${vencord_path:-~/.config/Vencord/dist/}")/vencordDesktopPreload.js"
-  if [ ! -f "$PRELOAD_FILE" ]; then
-    PRELOAD_FILE=""
+  MAIN_FILE="$(normalizePath "${vencord_path:-~/.config/Vencord/dist/}")/vencordDesktopMain.js"
+  if [ ! -f "$MAIN_FILE" ]; then
+    MAIN_FILE=""
   fi
   # Bootstrap auto-update timer once if needed; avoid double-running updates when the dedicated timer exists
   if [ "$AUTO_UPDATE_ACTIVE" = true ] && [ -x "$HOME/.vesktopCustomCommands/vcc-autoupdate.sh" ]; then
@@ -261,8 +261,8 @@ main() {
       "$HOME/.vesktopCustomCommands/vcc-autoupdate.sh" || true
     fi
   fi
-  if [ -n "$PRELOAD_FILE" ] && [ -f "$PRELOAD_FILE" ]; then
-    if is_patched "$PRELOAD_FILE"; then
+  if [ -n "$MAIN_FILE" ] && [ -f "$MAIN_FILE" ]; then
+    if is_patched "$MAIN_FILE"; then
       exit 0
     fi
     WAS_RUNNING=false
@@ -272,7 +272,7 @@ main() {
     if pgrep -x vesktop >/dev/null 2>&1 || pgrep -f '[Vv]esktop' >/dev/null 2>&1; then WAS_RUNNING=true; fi
     if [ "${auto_repatch}" = "true" ]; then
       if [ "${auto_restart}" = "true" ]; then
-        if patch_preload "$PRELOAD_FILE"; then
+        if patch_main "$MAIN_FILE"; then
           restart_vesktop "$WAS_RUNNING" || true
         else
           # Inform user and offer interactive helper

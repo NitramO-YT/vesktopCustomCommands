@@ -57,17 +57,17 @@ detect_vesktop() {
 }
 
 is_patched() {
-  local preload_file="$1"
-  # Universal detection: check for our IIFE signature
-  if grep -q '})(__dirname);' "$preload_file"; then
+  local main_file="$1"
+  # Universal detection: check for our VCC signature in the injection code
+  if grep -q '\[VesktopCustomCommands\]' "$main_file"; then
     return 0
   fi
   return 1
 }
 
-patch_preload() {
-  local preload_file="$1"
-  local sample_url="https://raw.githubusercontent.com/NitramO-YT/vesktopCustomCommands/main/dist/vencord/vencordDesktopPreload_sample.js"
+patch_main() {
+  local main_file="$1"
+  local sample_url="https://raw.githubusercontent.com/NitramO-YT/vesktopCustomCommands/main/dist/vencord/vencordDesktopMain_sample.js"
   CODE_TO_INJECT=$(curl -s -w "%{http_code}" "$sample_url") || return 1
   HTTP_RESPONSE="${CODE_TO_INJECT: -3}"; CODE_TO_INJECT="${CODE_TO_INJECT%???}"
   if [ "$HTTP_RESPONSE" -ne 200 ] || [ -z "$CODE_TO_INJECT" ]; then
@@ -76,8 +76,8 @@ patch_preload() {
   fi
 
   # Universal injection: inject before the source map (works with all Vencord versions)
-  if grep -q '//# sourceURL=' "$preload_file"; then
-    sed -i "s|//# sourceURL=|${CODE_TO_INJECT}//# sourceURL=|" "$preload_file"
+  if grep -q '//# sourceURL=' "$main_file"; then
+    sed -i "s|//# sourceURL=|${CODE_TO_INJECT}//# sourceURL=|" "$main_file"
     return $?
   fi
 
@@ -124,14 +124,14 @@ ensure_session_env
 [ -f "$CONFIG" ] || { echo "Missing config at $CONFIG"; exit 1; }
 # shellcheck disable=SC1090
 source "$CONFIG"
-PRELOAD_FILE="$(normalizePath "${vencord_path:-~/.config/Vencord/dist/}")/vencordDesktopPreload.js"
+MAIN_FILE="$(normalizePath "${vencord_path:-~/.config/Vencord/dist/}")/vencordDesktopMain.js"
 
 
 echo "vesktopCustomCommands: a repatch is required."
 read -p "Do you want to repatch now? (y/n) " -n 1 -r; echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
   ensure_custom_code || true
-  if patch_preload "$PRELOAD_FILE"; then
+  if patch_main "$MAIN_FILE"; then
     echo "Repatch done."
     read -p "Do you want to restart Vesktop now? (y/n) " -n 1 -r; echo
     if [[ $REPLY =~ ^[Yy]$ ]]; then

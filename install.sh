@@ -111,11 +111,11 @@ if [[ ! $REPLY =~ ^[Yy]$ ]]; then
     echo "For a manual installation, please refer to the README.md file in the repository or follow the next steps:"
     echo "1. Download the 'dist' folder from the repository or its content."
     echo "2. 'dist' is separated in two parts:"
-    echo "    - 'vencord' folder contains the files to inject in the Vencord preload file."
+    echo "    - 'vencord' folder contains the files to inject in the Vencord main file."
     echo "    - 'vesktopCustomCommands' folder contains the scripts to mute/deafen and the '.config' file."
-    echo "3. You can make a backup of your Vencord preload file (usually located in '~/.config/Vencord/dist/vencordDesktopPreload.js' so 'cp ~/.config/Vencord/dist/vencordDesktopPreload.js ~/.config/Vencord/dist/vencordDesktopPreload.js.bak') or not, if you want to restore it later you can delete the file and start Vesktop to recreate it."
-    echo "4. Inject the content of 'vencordDesktopPreload_sample.js' in your Vencord preload file (usually located in '~/.config/Vencord/dist/vencordDesktopPreload.js'):"
-    echo "    - UNIVERSAL METHOD (works with all Vencord versions): Insert the content of 'vencordDesktopPreload_sample.js' just before the line '//# sourceURL=file:///VencordPreload'"
+    echo "3. You can make a backup of your Vencord main file (usually located in '~/.config/Vencord/dist/vencordDesktopMain.js' so 'cp ~/.config/Vencord/dist/vencordDesktopMain.js ~/.config/Vencord/dist/vencordDesktopMain.js.bak') or not, if you want to restore it later you can delete the file and start Vesktop to recreate it."
+    echo "4. Inject the content of 'vencordDesktopMain_sample.js' in your Vencord main file (usually located in '~/.config/Vencord/dist/vencordDesktopMain.js'):"
+    echo "    - UNIVERSAL METHOD (works with all Vencord versions): Insert the content of 'vencordDesktopMain_sample.js' just before the line '//# sourceURL='"
     echo "    (*NOT RECOMMENDED to replace the whole file, as it may become obsolete with Vesktop updates*)"
     echo "5. Make a dir 'vesktopCustomCommands' in your Vencord path (usually located in '~/.config/Vencord/dist/') and put the file 'customCode.js' in it."
     echo "6. Make a dir '~/.vesktopCustomCommands' and put the files 'mute.sh' and 'deafen.sh' in it."
@@ -165,7 +165,7 @@ fi
 
 # DESTINATION PATHS
 VENCORD_PATH_VCC="${VENCORD_PATH}vesktopCustomCommands/"
-VENCORD_PRELOAD_FILE="${VENCORD_PATH}vencordDesktopPreload.js"
+VENCORD_MAIN_FILE="${VENCORD_PATH}vencordDesktopMain.js"
 VENCORD_VCC_CUSTOM_CODE_FILE="${VENCORD_PATH_VCC}customCode.js"
 
 VCC_PATH="$HOME/.vesktopCustomCommands/"
@@ -184,9 +184,8 @@ VCC_REPOSITORY_BASE="${REPOSITORY_SOURCE}${VCC_REPOSITORY_USER}/${VCC_REPOSITORY
 VCC_REPOSITORY_DIST="${VCC_REPOSITORY_BASE}dist/"
 
 VCC_REPOSITORY_VENCORD_PATH="${VCC_REPOSITORY_DIST}vencord/"
-# Preload reference files are stored under dist in the repository
-VCC_REPOSITORY_VENCORD_PRELOAD_FILE="${VCC_REPOSITORY_VENCORD_PATH}vencordDesktopPreload.js"
-VCC_REPOSITORY_VENCORD_PRELOAD_FILE_SAMPLE="${VCC_REPOSITORY_VENCORD_PATH}vencordDesktopPreload_sample.js"
+# Main injection sample file is stored under dist in the repository
+VCC_REPOSITORY_VENCORD_MAIN_FILE_SAMPLE="${VCC_REPOSITORY_VENCORD_PATH}vencordDesktopMain_sample.js"
 VCC_REPOSITORY_VCC_CUSTOM_CODE_FILE="${VCC_REPOSITORY_VENCORD_PATH}customCode.js"
 
 VCC_REPOSITORY_VCC_PATH="${VCC_REPOSITORY_DIST}vesktopCustomCommands/"
@@ -196,36 +195,45 @@ VCC_REPOSITORY_VCC_CONFIG_PATH="${VCC_REPOSITORY_VCC_PATH}.config"
 
 
 
-# Check if the Vencord preload file exists and try to patch it
-PRELOAD_FILE_PATCHED=false
-if [ ! -f "$(normalizePath "$VENCORD_PRELOAD_FILE")" ]; then
-    read -p 'The preload file of Vencord of Vesktop does not exist, do you want to try to make it automatically? (y/n) ' -n 1 -r
+# Check if the Vencord main file exists and try to patch it
+MAIN_FILE_PATCHED=false
+if [ ! -f "$(normalizePath "$VENCORD_MAIN_FILE")" ]; then
+    read -p 'The main file of Vencord of Vesktop does not exist, do you want to try to make it automatically? (y/n) ' -n 1 -r
     echo    # move to a new line
     if [[ $REPLY =~ ^[Yy]$ ]]; then
         echo "Starting Vesktop..."
-        vesktop &
+        detect_vesktop
+        if [ -n "$START_CMD" ]; then
+            nohup bash -c "$START_CMD" >/dev/null 2>&1 & disown
+        else
+            vesktop &
+        fi
         sleep 5
         echo "Closing Vesktop..."
-        killall vesktop
-        if [ ! -f "$(normalizePath "$VENCORD_PRELOAD_FILE")" ]; then
-            echo "Vesktop was not able to create the preload file, using the reference file from the repository instead"
-            download_file "$VCC_REPOSITORY_VENCORD_PRELOAD_FILE" "$(normalizePath "$VENCORD_PRELOAD_FILE")"
-            PRELOAD_FILE_PATCHED=true
-            echo "The preload file was patched successfully"
+        detect_vesktop
+        if [ -n "$KILL_CMD" ]; then
+            eval "$KILL_CMD"
+        else
+            killall vesktop 2>/dev/null || true
+        fi
+        if [ ! -f "$(normalizePath "$VENCORD_MAIN_FILE")" ]; then
+            echo "Error: Vesktop was not able to create the main file."
+            echo "Please start Vesktop manually and wait for the files to be created, then run the script again."
+            exit 1
         fi
     else
-        echo "Please start Vesktop and wait for the preload file to be created, and then run the script again"
+        echo "Please start Vesktop and wait for the main file to be created, and then run the script again"
         exit 0
     fi
 fi
 
-# Patch the Vencord preload file if it was not patched before
-if [ "$PRELOAD_FILE_PATCHED" = false ]; then
-    echo "Trying to patch the Vencord preload file..."
+# Patch the Vencord main file if it was not patched before
+if [ "$MAIN_FILE_PATCHED" = false ]; then
+    echo "Trying to patch the Vencord main file..."
     echo "Downloading the code sample to inject from the repository..."
 
     # Download the code sample to inject from the repository
-    CODE_TO_INJECT=$(curl -s -w "%{http_code}" "$VCC_REPOSITORY_VENCORD_PRELOAD_FILE_SAMPLE")
+    CODE_TO_INJECT=$(curl -s -w "%{http_code}" "$VCC_REPOSITORY_VENCORD_MAIN_FILE_SAMPLE")
     HTTP_RESPONSE="${CODE_TO_INJECT: -3}"
     CODE_TO_INJECT="${CODE_TO_INJECT%???}"
 
@@ -234,33 +242,33 @@ if [ "$PRELOAD_FILE_PATCHED" = false ]; then
         exit 1
     fi
 
-    # Check if the preload file is already patched (not the first install)
-    # Universal detection: check for our IIFE signature
+    # Check if the main file is already patched (not the first install)
+    # Universal detection: check for our VCC signature in the injection code
     ALREADY_PATCHED=false
-    if grep -q '})(__dirname);' "$(normalizePath "$VENCORD_PRELOAD_FILE")"; then
+    if grep -q '\[VesktopCustomCommands\]' "$(normalizePath "$VENCORD_MAIN_FILE")"; then
         ALREADY_PATCHED=true
     fi
 
     if [ "$ALREADY_PATCHED" = true ]; then
-        echo "The preload file is already patched, skipping the patching process..."
+        echo "The main file is already patched, skipping the patching process..."
     else
-        # Make backup of the preload file
-        echo "Making a backup of the preload file..."
-        cp "$(normalizePath "$VENCORD_PRELOAD_FILE")" "$(normalizePath "$VENCORD_PRELOAD_FILE").bak"
+        # Make backup of the main file
+        echo "Making a backup of the main file..."
+        cp "$(normalizePath "$VENCORD_MAIN_FILE")" "$(normalizePath "$VENCORD_MAIN_FILE").bak"
 
-        echo "Injecting the code from the repository into the preload file..."
+        echo "Injecting the code from the repository into the main file..."
         # Universal injection: inject before the source map (works with all Vencord versions)
-        if grep -q '//# sourceURL=' "$(normalizePath "$VENCORD_PRELOAD_FILE")"; then
+        if grep -q '//# sourceURL=' "$(normalizePath "$VENCORD_MAIN_FILE")"; then
             echo "Using universal injection method (works with all Vencord versions)..."
-            sed -i "s|//# sourceURL=|${CODE_TO_INJECT}//# sourceURL=|" "$(normalizePath "$VENCORD_PRELOAD_FILE")"
+            sed -i "s|//# sourceURL=|${CODE_TO_INJECT}//# sourceURL=|" "$(normalizePath "$VENCORD_MAIN_FILE")"
             if [ $? -eq 0 ]; then
-                echo "The preload file was patched successfully."
+                echo "The main file was patched successfully."
             else
-                echo "Error: Failed to patch the preload file."
+                echo "Error: Failed to patch the main file."
                 exit 1
             fi
         else
-            echo "Error: Source map marker not found in the preload file. Cannot patch the file."
+            echo "Error: Source map marker not found in the main file. Cannot patch the file."
             echo "This may indicate an incompatible Vencord version."
             exit 1
         fi

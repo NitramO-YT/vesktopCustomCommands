@@ -2,8 +2,6 @@
 const muteActionFileName = 'mute';
 const deafenActionFileName = 'deafen';
 
-//button_adca65 enabled_adca65 button_dd4f85 lookBlank_dd4f85 colorBrand_dd4f85 grow_dd4f85 button_adca65 :has <g clip-path="url(#__lottie_element_5)"></g>
-// const muteButtonSelector = `button.button_adca65.button_dd4f85.button_adca65:has(g[clip-path="url(#__lottie_element_5)"])`;
 const muteButtonSelector = `
 :is(
 button.button__67645.enabled__67645.button__201d5.button__67645:has(g[clip-path="url(#__lottie_element_5)"]),
@@ -11,8 +9,6 @@ button:has(g[clip-path="url(#__lottie_element_5)"])
 )
 `;
 
-//button_adca65 enabled_adca65 button_dd4f85 lookBlank_dd4f85 colorBrand_dd4f85 grow_dd4f85 button_adca65 :has <g clip-path="url(#__lottie_element_42)"></g>
-// const deafenButtonSelector = `button.button_adca65.button_dd4f85.button_adca65:has(g[clip-path="url(#__lottie_element_42)"])`;
 const deafenButtonSelector = `
 :is(
 button.button__67645.enabled__67645.button__201d5.button__67645:has(g[clip-path="url(#__lottie_element_42)"]),
@@ -20,167 +16,126 @@ button:has(g[clip-path="url(#__lottie_element_42)"])
 )
 `;
 
+const fs = require('fs');
+const path = require('path');
+const { BrowserWindow, app } = require('electron');
 
+// === Unified Logger ===
+const LOG_PREFIX = '[VesktopCustomCommands]';
 
-const awaitForElement = (selector, callback, options = {}) => {
-    if (!selector) {
-        throw new Error('awaitForElement: selector is required');
-    }
-    if (!callback) {
-        throw new Error('awaitForElement: callback is required');
-    }
-    if (typeof callback !== 'function') {
-        throw new Error('awaitForElement: callback must be a function');
-    }
-    if (typeof options !== 'object') {
-        throw new Error('awaitForElement: options must be an object');
-    }
-    if (options.timeout !== undefined && typeof options.timeout !== 'number') {
-        throw new Error('awaitForElement: options.timeout must be a number');
-    }
-    if (options.interval !== undefined && typeof options.interval !== 'number') {
-        throw new Error('awaitForElement: options.interval must be a number');
-    }
-    if (options.timeout !== undefined && options.timeout < 0) {
-        throw new Error('awaitForElement: options.timeout must be a positive number');
-    }
-    if (options.interval !== undefined && options.interval < 0) {
-        throw new Error('awaitForElement: options.interval must be a positive number');
-    }
-    if (options.timeout && options.interval && options.timeout < options.interval) {
-        throw new Error('awaitForElement: options.timeout must be greater than options.interval');
-    }
+// Queue for logs before window is ready
+let pendingLogs = [];
+let windowReady = false;
 
-    const timeout = options.timeout || 5000; // Default timeout: 5000ms
-    const interval = options.interval || 100; // Default interval: 100ms
-
-    let elapsedTime = 0;
-
-    const checkElement = () => {
-        const element = document.querySelector(selector);
-        if (element) {
-            callback(element);
-        } else if (elapsedTime < timeout) {
-            elapsedTime += interval;
-            setTimeout(checkElement, interval);
-        } else {
-            console.error(`awaitForElement: Timeout reached while waiting for selector: ${selector}`);
-        }
-    };
-
-    checkElement();
+const sendLogToWindow = (win, level, escapedMessage) => {
+    win.webContents.executeJavaScript(`console.${level}("${LOG_PREFIX}", "${escapedMessage}")`).catch(() => {});
 };
 
-const getElement = (selector, options = {}) => {
-    if (!selector) {
-        throw new Error('getElement: selector is required');
-    }
-    if (typeof options !== 'object') {
-        throw new Error('getElement: options must be an object');
-    }
-    if (options.timeout !== undefined && typeof options.timeout !== 'number') {
-        throw new Error('getElement: options.timeout must be a number');
-    }
-    if (options.interval !== undefined && typeof options.interval !== 'number') {
-        throw new Error('getElement: options.interval must be a number');
-    }
-    if (options.timeout !== undefined && options.timeout < 0) {
-        throw new Error('getElement: options.timeout must be a positive number');
-    }
-    if (options.interval !== undefined && options.interval < 0) {
-        throw new Error('getElement: options.interval must be a positive number');
-    }
-    if (options.timeout && options.interval && options.timeout < options.interval) {
-        throw new Error('getElement: options.timeout must be greater than options.interval');
+const logToRenderer = (level, ...args) => {
+    const message = args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' ');
+    const escapedMessage = message.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n');
+
+    if (!windowReady) {
+        pendingLogs.push({ level, escapedMessage });
+        return;
     }
 
-    return new Promise((resolve, reject) => {
-        const timeout = options.timeout || 5000; // Default timeout: 5000ms
-        const interval = options.interval || 100; // Default interval: 100ms
-
-        let elapsedTime = 0;
-
-        const checkElement = () => {
-            const element = document.querySelector(selector);
-            if (element) {
-                resolve(element);
-            } else if (elapsedTime < timeout) {
-                elapsedTime += interval;
-                setTimeout(checkElement, interval);
-            } else {
-                reject(new Error(`getElement: Timeout reached while waiting for selector: ${selector}`));
-            }
-        };
-
-        checkElement();
+    BrowserWindow.getAllWindows().forEach(win => {
+        sendLogToWindow(win, level, escapedMessage);
     });
 };
 
+const flushPendingLogs = (win) => {
+    pendingLogs.forEach(({ level, escapedMessage }) => {
+        sendLogToWindow(win, level, escapedMessage);
+    });
+    pendingLogs = [];
+};
 
+// Wait for window to be ready before sending queued logs
+app.on('browser-window-created', (event, win) => {
+    win.webContents.on('did-finish-load', () => {
+        if (!windowReady) {
+            windowReady = true;
+            flushPendingLogs(win);
+        }
+    });
+});
 
+const logger = {
+    log: (...args) => { console.log(LOG_PREFIX, ...args); logToRenderer('log', ...args); },
+    info: (...args) => { console.info(LOG_PREFIX, ...args); logToRenderer('info', ...args); },
+    warn: (...args) => { console.warn(LOG_PREFIX, ...args); logToRenderer('warn', ...args); },
+    error: (...args) => { console.error(LOG_PREFIX, ...args); logToRenderer('error', ...args); }
+};
 
+logger.info("Custom code executed from customCode.js");
+logger.info("Made with ❤️ by NitramO");
 
-console.info("Custom code executed from customCode.js");
-console.info("Made with ❤️ by NitramO");
+// === Click in Renderer ===
+const clickInRenderer = (selector) => {
+    BrowserWindow.getAllWindows().forEach(win => {
+        const escapedSelector = selector.replace(/`/g, '\\`').replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
+        win.webContents.executeJavaScript(`
+            (function() {
+                const el = document.querySelector(\`${escapedSelector}\`);
+                if (el) {
+                    el.click();
+                    console.log('${LOG_PREFIX}', 'Button clicked!');
+                    return true;
+                } else {
+                    console.warn('${LOG_PREFIX}', 'Button not found');
+                    return false;
+                }
+            })();
+        `).then(result => {
+            if (result) logger.log('Click successful');
+        }).catch(() => {});
+    });
+};
 
-
-
-const fs = require('fs');
-const path = require('path');
-
-// Function to monitor and execute an action if the file exists
+// === File Monitor ===
 const monitorFile = (filePath, action) => {
     const checkFile = () => {
-        fs.access(filePath, fs.constants.F_OK, (err) => {
-            if (!err) {
-                console.log(`File found: ${filePath}`);
-                
-                // Delete the file
-                fs.unlink(filePath, (err) => {
-                    if (err) {
-                        console.error(`Error while deleting file ${filePath}:`, err);
-                        return;
-                    }
-                    console.log(`Deleted file: ${filePath}`);
-                    
-                    // Execute the action
-                    action();
-                    // console.info(`Action executed for file: ${filePath}`);
-                });
+        fs.stat(filePath, (err, stats) => {
+            if (err) return; // File doesn't exist
+
+            // Check if it's a file, not a directory
+            if (!stats.isFile()) {
+                logger.warn(`Ignored: ${filePath} is not a file (possibly a directory)`);
+                return;
             }
+
+            logger.log(`File found: ${filePath}`);
+            fs.unlink(filePath, (unlinkErr) => {
+                if (unlinkErr) {
+                    logger.error(`Error deleting file ${filePath}:`, unlinkErr.message);
+                    return;
+                }
+                logger.log(`Deleted file: ${filePath}`);
+                action();
+            });
         });
     };
-
-    // Check the file regularly
     setInterval(checkFile, 350);
 };
 
-// Define the mute and deafen file paths
+// === Define paths and actions ===
 const muteFilePath = path.join(__dirname, muteActionFileName);
 const deafenFilePath = path.join(__dirname, deafenActionFileName);
 
-// Actions to toggle mute
 const muteAction = () => {
-    console.info('Action : Toggle mute triggered');
-    getElement(muteButtonSelector).then((element) => {
-        element.click();
-    }).catch((error) => {
-        console.error('Error while searching for the mute button:', error.message);
-    });
+    logger.info('Action: Toggle mute triggered');
+    clickInRenderer(muteButtonSelector);
 };
 
-// Actions to toggle deafen
 const deafenAction = () => {
-    console.info('Action : Toggle deafen triggered');
-    getElement(deafenButtonSelector).then((element) => {
-        element.click();
-    }).catch((error) => {
-        console.error('Error while searching for the deafen button:', error.message);
-    });
+    logger.info('Action: Toggle deafen triggered');
+    clickInRenderer(deafenButtonSelector);
 };
 
-// Monitor the mute and deafen files
+// === Start monitoring ===
 monitorFile(muteFilePath, muteAction);
 monitorFile(deafenFilePath, deafenAction);
 
-console.info('Monitoring of mute and deafen files started.');
+logger.info('Monitoring of mute and deafen files started.');

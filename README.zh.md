@@ -2,7 +2,7 @@
 
 # vesktopCustomCommands (VCC) 简介
 VCC 是一个系统，允许您向 Vesktop 添加静音和拒听的全局快捷键。这是对 Vesktop 目前缺少全局快捷键的临时解决方案，直到 Vesktop 团队找到更好的解决方案。
-基本上，它是一组脚本（`mute.sh` 和 `deafen.sh`），您可以从系统中的自定义全局快捷键调用这些脚本，在 Vesktop 中将自己静音和拒听，并通过在 Vencord 预加载文件中注入自定义 Javascript 代码来触发 Vesktop 中的这些操作。
+基本上，它是一组脚本（`mute.sh` 和 `deafen.sh`），您可以从系统中的自定义全局快捷键调用这些脚本，在 Vesktop 中将自己静音和拒听，并通过在 Vencord 主文件中注入自定义 Javascript 代码来触发 Vesktop 中的这些操作。
 
 # 系统中的快捷键配置
 您需要在系统中配置自定义全局快捷键以调用 `~/.vesktopCustomCommands/` 文件夹中的 `mute.sh` 和 `deafen.sh` 脚本。
@@ -26,9 +26,9 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/NitramO-YT/vesktopCustom
 
 ### 可选：自动重新修补
 
-在安装过程中，您可以启用自动重新修补系统，该系统会定期检查 VCC 补丁是否仍存在于 Vencord 预加载文件中，并在删除后重新应用（例如，在 Vencord/Vesktop 更新或重置后）。
+在安装过程中，您可以启用自动重新修补系统，该系统会定期检查 VCC 补丁是否仍存在于 Vencord 主文件中，并在删除后重新应用（例如，在 Vencord/Vesktop 更新或重置后）。
 
-- 为什么需要？Vesktop/Vencord 更新或某些启动场景可能会将预加载文件恢复到其原始状态，从而删除 VCC 注入。自动重新修补可确保您的快捷键无需手动干预即可继续工作。
+- 为什么需要？Vesktop/Vencord 更新或某些启动场景可能会将主文件恢复到其原始状态，从而删除 VCC 注入。自动重新修补可确保您的快捷键无需手动干预即可继续工作。
 - 设置存储在 `~/.vesktopCustomCommands/.config` 中：
   - `auto_repatch="true|false"`（默认：`false`）
   - `auto_restart="true|false"`（默认：`false`）– 如果启用，Vesktop 将在重新修补后自动重启。您可以稍后使用以下命令切换此选项。
@@ -74,12 +74,11 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/NitramO-YT/vesktopCustom
 ## 手动安装
 1. 从存储库下载 `dist` 文件夹或其内容。
 2. `dist` 分为两部分：
-    - `vencord` 文件夹包含要注入 Vencord 预加载文件的文件。
+    - `vencord` 文件夹包含要注入 Vencord 主文件的文件。
     - `vesktopCustomCommands` 文件夹包含用于静音/拒听的脚本和 `.config` 文件。
-3. 您可以备份 Vencord 预加载文件（通常位于 `~/.config/Vencord/dist/vencordDesktopPreload.js`，使用 `cp ~/.config/Vencord/dist/vencordDesktopPreload.js ~/.config/Vencord/dist/vencordDesktopPreload.js.bak`），如果您想稍后恢复它，可以删除该文件并启动 Vesktop 以重新创建它。
-4. 将 `vencordDesktopPreload_sample.js` 的内容注入到您的 Vencord 预加载文件中（通常位于 `~/.config/Vencord/dist/vencordDesktopPreload.js`）：
-    - **通用方法（适用于所有 Vencord 版本）：** 在文件末尾的 `//# sourceURL=file:///VencordPreload` 行之前插入 `vencordDesktopPreload_sample.js` 的全部内容。
-    - **替代方法：** 用提供的 `vencordDesktopPreload.js` 替换整个文件（*不推荐，因为如果 Vesktop 更新后 VCC 没有更新，可靠性较低，此文件可能已过时*）。
+3. 您可以备份 Vencord 主文件（通常位于 `~/.config/Vencord/dist/vencordDesktopMain.js`，使用 `cp ~/.config/Vencord/dist/vencordDesktopMain.js ~/.config/Vencord/dist/vencordDesktopMain.js.bak`），如果您想稍后恢复它，可以删除该文件并启动 Vesktop 以重新创建它。
+4. 将 `vencordDesktopMain_sample.js` 的内容注入到您的 Vencord 主文件中（通常位于 `~/.config/Vencord/dist/vencordDesktopMain.js`）：
+    - 在文件末尾的 `//# sourceURL=` 行之前插入 `vencordDesktopMain_sample.js` 的全部内容。
 5. 在您的 Vencord 路径中创建一个 `vesktopCustomCommands` 目录（通常位于 `~/.config/Vencord/dist/`）并将 `customCode.js` 文件放入其中。
 6. 创建一个 `~/.vesktopCustomCommands` 目录并将 `mute.sh` 和 `deafen.sh` 文件放入其中。
 7. 为 `mute.sh` 和 `deafen.sh` 脚本添加权限：
@@ -117,7 +116,7 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/NitramO-YT/vesktopCustom
 3. 删除 `~/.vesktopCustomCommands` 文件夹。
 4. 删除 Vencord 路径 `~/.config/Vencord/dist/vesktopCustomCommands/` 中的 `customCode.js` 文件。
 5. 删除 Vencord 路径 `~/.config/Vencord/dist/` 中的 `vesktopCustomCommands` 文件夹。
-6. 删除 Vencord 预加载文件（通常位于 `~/.config/Vencord/dist/vencordDesktopPreload.js`）中注入的代码，或用您制作的备份替换它（如果您有）。（您也可以删除文件并启动 Vesktop 以重新创建它）。
+6. 删除 Vencord 主文件（通常位于 `~/.config/Vencord/dist/vencordDesktopMain.js`）中注入的代码，或用您制作的备份替换它（如果您有）。（您也可以删除文件并启动 Vesktop 以重新创建它）。
 7. 重启 Vesktop 以应用更改。
 
 ---

@@ -2,7 +2,7 @@
 
 # vesktopCustomCommands (VCC) 소개
 VCC는 Vesktop에 음소거 및 귀먹게 하기 전역 단축키를 추가할 수 있는 시스템입니다. 이는 Vesktop 팀이 더 나은 솔루션을 찾을 때까지 현재 Vesktop의 전역 단축키 부족에 대한 임시 솔루션입니다.
-기본적으로 시스템의 사용자 정의 전역 단축키에서 호출할 수 있는 일련의 스크립트(`mute.sh` 및 `deafen.sh`)로, Vesktop에서 자신을 음소거 및 귀먹게 하며, Vencord 프리로드 파일에 사용자 정의 Javascript 코드를 주입하여 Vesktop에서 이러한 작업을 트리거합니다.
+기본적으로 시스템의 사용자 정의 전역 단축키에서 호출할 수 있는 일련의 스크립트(`mute.sh` 및 `deafen.sh`)로, Vesktop에서 자신을 음소거 및 귀먹게 하며, Vencord 메인 파일에 사용자 정의 Javascript 코드를 주입하여 Vesktop에서 이러한 작업을 트리거합니다.
 
 # 시스템의 단축키 구성
 `~/.vesktopCustomCommands/` 폴더에 있는 `mute.sh` 및 `deafen.sh` 스크립트를 호출하려면 시스템에서 사용자 정의 전역 단축키를 구성해야 합니다.
@@ -26,9 +26,9 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/NitramO-YT/vesktopCustom
 
 ### 선택 사항: 자동 재패치
 
-설치 중에 VCC 패치가 Vencord 프리로드 파일에 여전히 존재하는지 주기적으로 확인하고 제거된 경우(예: Vencord/Vesktop 업데이트 또는 재설정 후) 다시 적용하는 자동 재패치 시스템을 활성화할 수 있습니다.
+설치 중에 VCC 패치가 Vencord 메인 파일에 여전히 존재하는지 주기적으로 확인하고 제거된 경우(예: Vencord/Vesktop 업데이트 또는 재설정 후) 다시 적용하는 자동 재패치 시스템을 활성화할 수 있습니다.
 
-- 왜 필요한가요? Vesktop/Vencord 업데이트 또는 특정 시작 시나리오로 인해 프리로드 파일이 원래 상태로 복원되어 VCC 주입이 제거될 수 있습니다. 자동 재패치는 수동 개입 없이 단축키가 계속 작동하도록 보장합니다.
+- 왜 필요한가요? Vesktop/Vencord 업데이트 또는 특정 시작 시나리오로 인해 메인 파일이 원래 상태로 복원되어 VCC 주입이 제거될 수 있습니다. 자동 재패치는 수동 개입 없이 단축키가 계속 작동하도록 보장합니다.
 - 설정은 `~/.vesktopCustomCommands/.config`에 저장됩니다:
   - `auto_repatch="true|false"` (기본값: `false`)
   - `auto_restart="true|false"` (기본값: `false`) – 활성화된 경우 재패치 후 Vesktop이 자동으로 재시작됩니다. 나중에 다음 명령으로 전환할 수 있습니다.
@@ -74,12 +74,11 @@ GitHub에서 새 버전을 사용할 수 있는지 정기적으로 확인하고 
 ## 수동 설치
 1. 저장소에서 `dist` 폴더 또는 해당 내용을 다운로드합니다.
 2. `dist`는 두 부분으로 나뉩니다:
-    - `vencord` 폴더에는 Vencord 프리로드 파일에 주입할 파일이 포함되어 있습니다.
+    - `vencord` 폴더에는 Vencord 메인 파일에 주입할 파일이 포함되어 있습니다.
     - `vesktopCustomCommands` 폴더에는 음소거/귀먹게 하기용 스크립트와 `.config` 파일이 포함되어 있습니다.
-3. Vencord 프리로드 파일(일반적으로 `~/.config/Vencord/dist/vencordDesktopPreload.js`에 있음)의 백업을 만들 수 있습니다(`cp ~/.config/Vencord/dist/vencordDesktopPreload.js ~/.config/Vencord/dist/vencordDesktopPreload.js.bak`). 나중에 복원하려면 파일을 삭제하고 Vesktop을 시작하여 다시 만들 수 있습니다.
-4. `vencordDesktopPreload_sample.js`의 내용을 Vencord 프리로드 파일(일반적으로 `~/.config/Vencord/dist/vencordDesktopPreload.js`에 있음)에 주입합니다:
-    - **범용 방법(모든 Vencord 버전에서 작동):** 파일 끝에 있는 `//# sourceURL=file:///VencordPreload` 줄 바로 앞에 `vencordDesktopPreload_sample.js`의 전체 내용을 삽입합니다.
-    - **대안:** 제공된 `vencordDesktopPreload.js`로 전체 파일을 바꿉니다(*권장하지 않음. Vesktop 업데이트 후 VCC가 업데이트되지 않은 경우 신뢰성이 낮고 이 파일이 오래되었을 수 있습니다*).
+3. Vencord 메인 파일(일반적으로 `~/.config/Vencord/dist/vencordDesktopMain.js`에 있음)의 백업을 만들 수 있습니다(`cp ~/.config/Vencord/dist/vencordDesktopMain.js ~/.config/Vencord/dist/vencordDesktopMain.js.bak`). 나중에 복원하려면 파일을 삭제하고 Vesktop을 시작하여 다시 만들 수 있습니다.
+4. `vencordDesktopMain_sample.js`의 내용을 Vencord 메인 파일(일반적으로 `~/.config/Vencord/dist/vencordDesktopMain.js`에 있음)에 주입합니다:
+    - 파일 끝에 있는 `//# sourceURL=` 줄 바로 앞에 `vencordDesktopMain_sample.js`의 전체 내용을 삽입합니다.
 5. Vencord 경로(일반적으로 `~/.config/Vencord/dist/`에 있음)에 `vesktopCustomCommands` 디렉토리를 만들고 그 안에 `customCode.js` 파일을 넣습니다.
 6. `~/.vesktopCustomCommands` 디렉토리를 만들고 그 안에 `mute.sh` 및 `deafen.sh` 파일을 넣습니다.
 7. `mute.sh` 및 `deafen.sh` 스크립트에 권한 추가:
@@ -117,7 +116,7 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/NitramO-YT/vesktopCustom
 3. `~/.vesktopCustomCommands` 폴더를 제거합니다.
 4. Vencord 경로 `~/.config/Vencord/dist/vesktopCustomCommands/`의 `customCode.js` 파일을 제거합니다.
 5. Vencord 경로 `~/.config/Vencord/dist/`의 `vesktopCustomCommands` 폴더를 제거합니다.
-6. Vencord 프리로드 파일(일반적으로 `~/.config/Vencord/dist/vencordDesktopPreload.js`에 있음)에 주입된 코드를 제거하거나 만든 백업으로 바꿉니다(있는 경우). (파일을 삭제하고 Vesktop을 시작하여 다시 만들 수도 있습니다).
+6. Vencord 메인 파일(일반적으로 `~/.config/Vencord/dist/vencordDesktopMain.js`에 있음)에 주입된 코드를 제거하거나 만든 백업으로 바꿉니다(있는 경우). (파일을 삭제하고 Vesktop을 시작하여 다시 만들 수도 있습니다).
 7. Vesktop을 재시작하여 변경 사항을 적용합니다.
 
 ---

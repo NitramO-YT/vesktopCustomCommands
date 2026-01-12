@@ -90,14 +90,14 @@ echo "This script will uninstall vesktopCustomCommands (VCC) from your system."
 read -p 'Do you want to proceed with the uninstallation? (y/n) ' -n 1 -r
 echo
 if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-    echo "For a manual uninstallation, please follow these steps:" 
+    echo "For a manual uninstallation, please follow these steps:"
     echo "1. Remove the custom global shortcuts in your system that call the scripts 'mute.sh' and 'deafen.sh' in '~/.vesktopCustomCommands/'."
     echo "2. Remove the '.config' file located in '~/.vesktopCustomCommands/'."
     echo "3. Remove the '~/.vesktopCustomCommands' folder."
     echo "4. Remove the 'customCode.js' file from your Vencord path (usually '~/.config/Vencord/dist/vesktopCustomCommands/')."
     echo "5. Remove the 'vesktopCustomCommands' folder from your Vencord path (usually '~/.config/Vencord/dist/')."
-    echo "6. Remove the injected code in your Vencord preload file (usually '~/.config/Vencord/dist/vencordDesktopPreload.js') or restore your backup."
-    echo "   Tip: you can also delete the preload file and start Vesktop to recreate it automatically."
+    echo "6. Remove the injected code in your Vencord main file (usually '~/.config/Vencord/dist/vencordDesktopMain.js') or restore your backup."
+    echo "   Tip: you can also delete the main file and start Vesktop to recreate it automatically."
     echo "7. Restart Vesktop to apply the changes."
     echo "Note: If you had enabled auto-repatch/auto-update, you may also disable the user systemd timer with:"
     echo "   systemctl --user disable --now vcc-autorepatch.timer"
@@ -136,6 +136,7 @@ fi
 
 # DESTINATION PATHS
 VENCORD_PATH_VCC="${VENCORD_PATH}vesktopCustomCommands/"
+VENCORD_MAIN_FILE="${VENCORD_PATH}vencordDesktopMain.js"
 VENCORD_PRELOAD_FILE="${VENCORD_PATH}vencordDesktopPreload.js"
 
 VCC_PATH="$HOME/.vesktopCustomCommands/"
@@ -154,31 +155,53 @@ fi
 
 echo "Starting uninstallation..."
 
-# 1) Revert Vencord preload injection
-if [ -f "$(normalizePath "$VENCORD_PRELOAD_FILE")" ]; then
-    echo "Processing Vencord preload file..."
-    PRELOAD_FILE_NORM="$(normalizePath "$VENCORD_PRELOAD_FILE")"
-    if [ -f "${PRELOAD_FILE_NORM}.bak" ]; then
-        echo "Found backup. Restoring original preload file from backup..."
-        cp -f "${PRELOAD_FILE_NORM}.bak" "$PRELOAD_FILE_NORM"
+# 1) Revert Vencord main file injection
+if [ -f "$(normalizePath "$VENCORD_MAIN_FILE")" ]; then
+    echo "Processing Vencord main file..."
+    MAIN_FILE_NORM="$(normalizePath "$VENCORD_MAIN_FILE")"
+    if [ -f "${MAIN_FILE_NORM}.bak" ]; then
+        echo "Found backup. Restoring original main file from backup..."
+        cp -f "${MAIN_FILE_NORM}.bak" "$MAIN_FILE_NORM"
         if [ $? -eq 0 ]; then
-            echo "Preload file restored from backup."
-            rm -f "${PRELOAD_FILE_NORM}.bak"
+            echo "Main file restored from backup."
+            rm -f "${MAIN_FILE_NORM}.bak"
         else
             echo "Warning: Failed to restore from backup. Attempting pattern-based cleanup..."
         fi
     fi
 
     # Pattern-based cleanup (in case backup restore didn't happen or didn't remove injection)
-    # Universal cleanup: remove our IIFE before the source map
-    if grep -q '})(__dirname);' "$PRELOAD_FILE_NORM"; then
-        # Remove everything between the last semicolon before our IIFE and the source map
-        sed -i -E 's|\(function\(vencordPath\)\{[^}]*\}\)\(__dirname\);||g' "$PRELOAD_FILE_NORM"
-        echo "Removed injected code from preload file."
+    # Remove the VCC injection block between the markers
+    if grep -q '\[VesktopCustomCommands\]' "$MAIN_FILE_NORM"; then
+        # Remove new style (single line with /* */ markers)
+        sed -i 's|/\* === VesktopCustomCommands Injection === \*/.*/\* === End VesktopCustomCommands === \*/||g' "$MAIN_FILE_NORM"
+        # Remove old style (multi-line with // markers) for backwards compatibility
+        sed -i '/\/\/ === VesktopCustomCommands Injection ===/,/\/\/ === End VesktopCustomCommands ===/d' "$MAIN_FILE_NORM"
+        echo "Removed injected code from main file."
     fi
 fi
 
-# 2) Remove Vencord VCC files
+# 2) Backwards compatibility: clean old preload injection if present
+if [ -f "$(normalizePath "$VENCORD_PRELOAD_FILE")" ]; then
+    PRELOAD_FILE_NORM="$(normalizePath "$VENCORD_PRELOAD_FILE")"
+    if [ -f "${PRELOAD_FILE_NORM}.bak" ]; then
+        echo "Found old preload backup. Restoring..."
+        cp -f "${PRELOAD_FILE_NORM}.bak" "$PRELOAD_FILE_NORM"
+        rm -f "${PRELOAD_FILE_NORM}.bak"
+        echo "Old preload file restored from backup."
+    fi
+    # Clean old injection patterns
+    if grep -q '\[vesktopCustomCommands\]' "$PRELOAD_FILE_NORM"; then
+        sed -i 's|if(location\.protocol!=="data:"){document\.readyState[^/]*{once:!0})}||g' "$PRELOAD_FILE_NORM"
+        echo "Removed old injected code from preload file."
+    fi
+    if grep -q '})(__dirname);' "$PRELOAD_FILE_NORM"; then
+        sed -i -E 's|\(function\(vencordPath\)\{[^}]*\}\)\(__dirname\);||g' "$PRELOAD_FILE_NORM"
+        echo "Removed old IIFE injected code from preload file."
+    fi
+fi
+
+# 3) Remove Vencord VCC files
 if [ -d "$(normalizePath "$VENCORD_PATH_VCC")" ]; then
     echo "Removing VCC files from Vencord path..."
     rm -f "$(normalizePath "${VENCORD_PATH_VCC}customCode.js")"
@@ -189,7 +212,7 @@ if [ -d "$(normalizePath "$VENCORD_PATH_VCC")" ]; then
     fi
 fi
 
-# 3) Remove local scripts and optionally settings
+# 4) Remove local scripts and optionally settings
 if [ -d "$(normalizePath "$VCC_PATH")" ]; then
     if [ "$REMOVE_SETTINGS" = true ]; then
         echo "Removing local VCC directory and settings..."

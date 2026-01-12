@@ -4,7 +4,7 @@
 
 VCC est un système qui vous permet d'ajouter un raccourci global pour couper le son du microphone et rendre sourd sur Vesktop. C'est une solution temporaire pour pallier l'absence de raccourcis globaux dans Vesktop, en attendant que l'équipe Vesktop trouve une meilleure solution. 
 
-Il s'agit essentiellement d'un ensemble de scripts (`mute.sh` & `deafen.sh`) que vous pouvez appeler via un raccourci global personnalisé dans votre système. Ces scripts exécutent les actions correspondantes dans Vesktop en injectant un code Javascript personnalisé dans le fichier de préchargement de Vencord.
+Il s'agit essentiellement d'un ensemble de scripts (`mute.sh` & `deafen.sh`) que vous pouvez appeler via un raccourci global personnalisé dans votre système. Ces scripts exécutent les actions correspondantes dans Vesktop en injectant un code Javascript personnalisé dans le fichier principal de Vencord.
 
 # Configuration des raccourcis dans votre système
 
@@ -29,9 +29,9 @@ Remarque : si un fichier de configuration existe déjà à l’emplacement `~/.v
 
 ### Optionnel : Auto-repatch
 
-Lors de l’installation, vous pouvez activer un système d’auto-repatch qui vérifie périodiquement si le patch VCC est toujours présent dans le fichier de préchargement de Vencord et le réapplique s’il a été retiré (ex. après une mise à jour ou une réinitialisation de Vencord/Vesktop).
+Lors de l’installation, vous pouvez activer un système d’auto-repatch qui vérifie périodiquement si le patch VCC est toujours présent dans le fichier principal de Vencord et le réapplique s’il a été retiré (ex. après une mise à jour ou une réinitialisation de Vencord/Vesktop).
 
-- Pourquoi en a-t-on besoin ? Les mises à jour de Vesktop/Vencord ou certains scénarios de démarrage peuvent restaurer le fichier de préchargement dans son état d’origine, supprimant l’injection VCC. L’auto-repatch garantit que vos raccourcis continuent de fonctionner sans intervention manuelle.
+- Pourquoi en a-t-on besoin ? Les mises à jour de Vesktop/Vencord ou certains scénarios de démarrage peuvent restaurer le fichier principal dans son état d’origine, supprimant l’injection VCC. L’auto-repatch garantit que vos raccourcis continuent de fonctionner sans intervention manuelle.
 - Les paramètres sont dans `~/.vesktopCustomCommands/.config` :
   - `auto_repatch="true|false"` (par défaut : `false`)
   - `auto_restart="true|false"` (par défaut : `false`) – si activé, Vesktop sera automatiquement relancé après un repatch. Vous pouvez l’activer/désactiver ensuite avec les commandes ci‑dessous.
@@ -76,16 +76,15 @@ Vous pouvez activer un système d’auto-update qui vérifie régulièrement si 
 ## Installation manuelle
 1. Téléchargez le dossier `dist` du dépôt ou son contenu.
 2. Le dossier `dist` est divisé en deux parties :
-    - Le dossier `vencord` contient les fichiers à injecter dans le fichier de préchargement de Vencord.
+    - Le dossier `vencord` contient les fichiers à injecter dans le fichier principal de Vencord.
     - Le dossier `vesktopCustomCommands` contient les scripts pour couper/rendre sourd et le fichier `.config`.
-3. Vous pouvez faire une sauvegarde de votre fichier de préchargement Vencord (généralement situé dans `~/.config/Vencord/dist/vencordDesktopPreload.js`) avec :
+3. Vous pouvez faire une sauvegarde de votre fichier principal Vencord (généralement situé dans `~/.config/Vencord/dist/vencordDesktopMain.js`) avec :
    ```bash
-   cp ~/.config/Vencord/dist/vencordDesktopPreload.js ~/.config/Vencord/dist/vencordDesktopPreload.js.bak
+   cp ~/.config/Vencord/dist/vencordDesktopMain.js ~/.config/Vencord/dist/vencordDesktopMain.js.bak
    ```
    Si vous souhaitez restaurer ce fichier plus tard, vous pouvez simplement le supprimer et redémarrer Vesktop pour qu'il soit recréé.
-4. Injectez le contenu de `vencordDesktopPreload_sample.js` dans votre fichier de préchargement Vencord (généralement situé dans `~/.config/Vencord/dist/vencordDesktopPreload.js`) :
-    - **MÉTHODE UNIVERSELLE (fonctionne avec toutes les versions de Vencord) :** Insérez le contenu complet de `vencordDesktopPreload_sample.js` juste avant la ligne `//# sourceURL=file:///VencordPreload` à la fin du fichier.
-    - **Alternative :** Remplacez le fichier entier par le fichier `vencordDesktopPreload.js` fourni (*NON RECOMMANDÉ, car en cas de mise à jour de Vesktop, si VCC n'a pas été mis à jour depuis, c'est moins fiable et il est possible que ce fichier soit obsolète*).
+4. Injectez le contenu de `vencordDesktopMain_sample.js` dans votre fichier principal Vencord (généralement situé dans `~/.config/Vencord/dist/vencordDesktopMain.js`) :
+    - Insérez le contenu complet de `vencordDesktopMain_sample.js` juste avant la ligne `//# sourceURL=` à la fin du fichier.
 5. Créez un dossier `vesktopCustomCommands` dans le chemin de Vencord (généralement situé dans `~/.config/Vencord/dist/`) et placez-y le fichier `customCode.js`.
 6. Créez un dossier `~/.vesktopCustomCommands` et placez-y les fichiers `mute.sh` et `deafen.sh`.
 7. Ajoutez les permissions nécessaires aux scripts `mute.sh` et `deafen.sh` :
@@ -123,7 +122,7 @@ Lors de la désinstallation, il vous sera demandé si vous souhaitez TOUT suppri
 3. Supprimez le dossier `~/.vesktopCustomCommands`.
 4. Supprimez le fichier `customCode.js` dans le chemin de Vencord `~/.config/Vencord/dist/vesktopCustomCommands/`.
 5. Supprimez le dossier `vesktopCustomCommands` dans le chemin de Vencord `~/.config/Vencord/dist/`.
-6. Supprimez le code injecté dans le fichier de préchargement de Vencord (généralement situé dans `~/.config/Vencord/dist/vencordDesktopPreload.js`) ou remplacez-le par la sauvegarde que vous avez faite si vous en avez une. (Vous pouvez également supprimer le fichier et redémarrer Vesktop pour qu'il soit recréé).
+6. Supprimez le code injecté dans le fichier principal de Vencord (généralement situé dans `~/.config/Vencord/dist/vencordDesktopMain.js`) ou remplacez-le par la sauvegarde que vous avez faite si vous en avez une. (Vous pouvez également supprimer le fichier et redémarrer Vesktop pour qu'il soit recréé).
 7. Redémarrez Vesktop pour appliquer les changements.
 
 ---
