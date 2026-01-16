@@ -92,6 +92,7 @@ launch_terminal_cmd() {
   if command -v gnome-terminal >/dev/null 2>&1; then nohup gnome-terminal -- bash -lc "$cmd" >/dev/null 2>&1 & disown; return; fi
   if command -v xfce4-terminal >/dev/null 2>&1; then nohup xfce4-terminal -e "bash -lc '$cmd'" >/dev/null 2>&1 & disown; return; fi
   if command -v kitty >/dev/null 2>&1; then nohup kitty bash -lc "$cmd" >/dev/null 2>&1 & disown; return; fi
+  if command -v foot >/dev/null 2>&1; then nohup foot -e bash -lc "$cmd" >/dev/null 2>&1 & disown; return; fi
   if command -v alacritty >/dev/null 2>&1; then nohup alacritty -e bash -lc "$cmd" >/dev/null 2>&1 & disown; return; fi
   if command -v wezterm >/dev/null 2>&1; then nohup wezterm start -- bash -lc "$cmd" >/dev/null 2>&1 & disown; return; fi
   if command -v tilix >/dev/null 2>&1; then nohup tilix -q -e bash -lc "$cmd" >/dev/null 2>&1 & disown; return; fi
