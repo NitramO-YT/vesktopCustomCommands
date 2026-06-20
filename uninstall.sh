@@ -105,41 +105,41 @@ if [[ ! $REPLY =~ ^[Yy]$ ]]; then
     exit 0
 fi
 
-DEFAULT_VENCORD_PATH="~/.config/Vencord/dist/"
-VENCORD_PATH=$DEFAULT_VENCORD_PATH
-
-# Ask for validation of Vencord path
-read -p 'Is the path of Vencord for Vesktop "'${VENCORD_PATH}'"? (y/n) ' -n 1 -r
-echo
-if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-    read -p 'Please enter the path of Vencord for Vesktop: ' -i "${VENCORD_PATH}" -e vencordPath
-    VENCORD_PATH=$vencordPath
+# Look up the Vencord files directory
+if [[ -d $(normalizePath "~/.config/Vencord/dist/") ]]; then
+    VENCORD_PATH="~/.config/Vencord/dist/"
+elif [[ -d $(normalizePath "~/.config/vesktop/sessionData/vencordFiles/") ]]; then
+    VENCORD_PATH="~/.config/vesktop/sessionData/vencordFiles/"
 fi
 
-# Check path exists or fallback to default
-if [ ! -d "$(normalizePath "$VENCORD_PATH")" ]; then
-    echo 'Error: The path "'${VENCORD_PATH}'" does not exist'
-    echo 'Trying with the default path "'${DEFAULT_VENCORD_PATH}'"...'
-    if [ ! -d "$(normalizePath "$DEFAULT_VENCORD_PATH")" ]; then
-        echo "Error: The default path ${DEFAULT_VENCORD_PATH} does not exist"
+echo  # Newline
+
+if [[ -n "${VENCORD_PATH}" ]]; then
+    echo "Detected Vencord files at ${VENCORD_PATH}"
+else
+    # Ask for the path of Vencord (with pre-filled "~/.config/Vencord/dist/" so the user don't have to re type it)
+    echo "Vencord files path couldn't be found automatically."
+    read -p "Please enter it manually: " -i "${VENCORD_PATH}" -e vencordPath
+    VENCORD_PATH="$(normalizePath "${vencordPath}")"
+
+    if [ ! -d "${VENCORD_PATH}" ]; then
+        echo 'Error: The path "'${VENCORD_PATH}'" does not exist'
         exit 1
-    else
-        echo 'Default path found. Using it.'
-        VENCORD_PATH=$DEFAULT_VENCORD_PATH
     fi
 fi
 
 # Ensure trailing slash
-if [[ "$VENCORD_PATH" != */ ]]; then
+if [[ "${VENCORD_PATH}" != */ ]]; then
     VENCORD_PATH="${VENCORD_PATH}/"
 fi
+VENCORD_PATH="$(normalizePath $VENCORD_PATH)"  # And normalize the path
 
 # DESTINATION PATHS
 VENCORD_PATH_VCC="${VENCORD_PATH}vesktopCustomCommands/"
 VENCORD_MAIN_FILE="${VENCORD_PATH}vencordDesktopMain.js"
 VENCORD_PRELOAD_FILE="${VENCORD_PATH}vencordDesktopPreload.js"
 
-VCC_PATH="$HOME/.vesktopCustomCommands/"
+VCC_PATH="${XDG_CONFIG_HOME:-$HOME/.config}/vesktopCustomCommands"
 VCC_MUTE_PATH="${VCC_PATH}mute.sh"
 VCC_DEAFEN_PATH="${VCC_PATH}deafen.sh"
 VCC_CONFIG_PATH="${VCC_PATH}.config"
