@@ -22,7 +22,7 @@ elif [[ -d $(normalizePath "~/.config/vesktop/sessionData/vencordFiles/") ]]; th
 fi
 
 # Read .config file to get the Vencord path
-CONFIG_FILE="$(dirname "$0")/.config"
+CONFIG_FILE="$(dirname "$0")/config"
 if [ -f "$CONFIG_FILE" ]; then
     source "$CONFIG_FILE"
     VENCORD_PATH="$(normalizePath "$vencord_path")"

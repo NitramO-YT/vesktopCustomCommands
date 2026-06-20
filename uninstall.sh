@@ -128,18 +128,19 @@ else
     fi
 fi
 
-# Ensure trailing slash
+# Normalize the path
+VENCORD_PATH="$(normalizePath $VENCORD_PATH)"
+# And ensure trailing slash
 if [[ "${VENCORD_PATH}" != */ ]]; then
     VENCORD_PATH="${VENCORD_PATH}/"
 fi
-VENCORD_PATH="$(normalizePath $VENCORD_PATH)"  # And normalize the path
 
 # DESTINATION PATHS
 VENCORD_PATH_VCC="${VENCORD_PATH}vesktopCustomCommands/"
 VENCORD_MAIN_FILE="${VENCORD_PATH}vencordDesktopMain.js"
 VENCORD_PRELOAD_FILE="${VENCORD_PATH}vencordDesktopPreload.js"
 
-VCC_PATH="${XDG_CONFIG_HOME:-$HOME/.config}/vesktopCustomCommands"
+VCC_PATH="${XDG_CONFIG_HOME:-$HOME/.config}/vesktopCustomCommands/"
 VCC_MUTE_PATH="${VCC_PATH}mute.sh"
 VCC_DEAFEN_PATH="${VCC_PATH}deafen.sh"
 VCC_CONFIG_PATH="${VCC_PATH}.config"
@@ -243,5 +244,3 @@ if [ "$REMOVE_SETTINGS" = true ]; then
 fi
 
 exit 0
-
-

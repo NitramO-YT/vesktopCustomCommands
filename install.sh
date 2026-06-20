@@ -155,18 +155,19 @@ else
     fi
 fi
 
-# Check if the path ends with a slash, if not, add it
+# Normalize the path
+VENCORD_PATH="$(normalizePath $VENCORD_PATH)"
+# And then check if the path ends with a slash, if not, add it
 if [[ "${VENCORD_PATH}" != */ ]]; then
     VENCORD_PATH="${VENCORD_PATH}/"
 fi
-VENCORD_PATH="$(normalizePath $VENCORD_PATH)"  # And then normalize it
 
 # DESTINATION PATHS
 VENCORD_PATH_VCC="${VENCORD_PATH}vesktopCustomCommands/"
 VENCORD_MAIN_FILE="${VENCORD_PATH}vencordDesktopMain.js"
 VENCORD_VCC_CUSTOM_CODE_FILE="${VENCORD_PATH_VCC}customCode.js"
 
-VCC_PATH="${XDG_CONFIG_HOME:-$HOME/.config}/vesktopCustomCommands"
+VCC_PATH="${XDG_CONFIG_HOME:-$HOME/.config}/vesktopCustomCommands/"
 VCC_MUTE_PATH="${VCC_PATH}mute.sh"
 VCC_DEAFEN_PATH="${VCC_PATH}deafen.sh"
 VCC_CONFIG_PATH="${VCC_PATH}config"
