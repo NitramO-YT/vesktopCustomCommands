@@ -90,18 +90,18 @@ echo "This script will uninstall vesktopCustomCommands (VCC) from your system."
 read -p 'Do you want to proceed with the uninstallation? (y/n) ' -n 1 -r
 echo
 if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-    echo "For a manual uninstallation, please follow these steps:"
-    echo "1. Remove the custom global shortcuts in your system that call the scripts 'mute.sh' and 'deafen.sh' in '~/.vesktopCustomCommands/'."
-    echo "2. Remove the '.config' file located in '~/.vesktopCustomCommands/'."
-    echo "3. Remove the '~/.vesktopCustomCommands' folder."
-    echo "4. Remove the 'customCode.js' file from your Vencord path (usually '~/.config/Vencord/dist/vesktopCustomCommands/')."
-    echo "5. Remove the 'vesktopCustomCommands' folder from your Vencord path (usually '~/.config/Vencord/dist/')."
-    echo "6. Remove the injected code in your Vencord main file (usually '~/.config/Vencord/dist/vencordDesktopMain.js') or restore your backup."
-    echo "   Tip: you can also delete the main file and start Vesktop to recreate it automatically."
-    echo "7. Restart Vesktop to apply the changes."
-    echo "Note: If you had enabled auto-repatch/auto-update, you may also disable the user systemd timer with:"
-    echo "   systemctl --user disable --now vcc-autorepatch.timer"
-    echo "   systemctl --user disable --now vcc-autorepatch.service"
+    echo "For a manual uninstallation, please follow these steps:
+1. Remove the custom global shortcuts in your system that call the scripts 'mute.sh' and 'deafen.sh' in '~/.vesktopCustomCommands/'.
+2. Remove the '.config' file located in '~/.vesktopCustomCommands/'.
+3. Remove the '~/.vesktopCustomCommands' folder.
+4. Remove the 'customCode.js' file from your Vencord path (usually '~/.config/Vencord/dist/vesktopCustomCommands/').
+5. Remove the 'vesktopCustomCommands' folder from your Vencord path (usually '~/.config/Vencord/dist/').
+6. Remove the injected code in your Vencord main file (usually '~/.config/Vencord/dist/vencordDesktopMain.js') or restore your backup.
+   Tip: you can also delete the main file and start Vesktop to recreate it automatically.
+7. Restart Vesktop to apply the changes.
+Note: If you had enabled auto-repatch/auto-update, you may also disable the user systemd timer with:
+   systemctl --user disable --now vcc-autorepatch.timer
+   systemctl --user disable --now vcc-autorepatch.service"
     exit 0
 fi
 
