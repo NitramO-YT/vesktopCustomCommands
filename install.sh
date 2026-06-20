@@ -108,58 +108,57 @@ offer_restart_vesktop() {
 read -p 'Do you want to automatically install "vesktopCustomCommands"? (y/n) ' -n 1 -r
 echo    # move to a new line
 if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-    echo "For a manual installation, please refer to the README.md file in the repository or follow the next steps:"
-    echo "1. Download the 'dist' folder from the repository or its content."
-    echo "2. 'dist' is separated in two parts:"
-    echo "    - 'vencord' folder contains the files to inject in the Vencord main file."
-    echo "    - 'vesktopCustomCommands' folder contains the scripts to mute/deafen and the '.config' file."
-    echo "3. You can make a backup of your Vencord main file (usually located in '~/.config/Vencord/dist/vencordDesktopMain.js' so 'cp ~/.config/Vencord/dist/vencordDesktopMain.js ~/.config/Vencord/dist/vencordDesktopMain.js.bak') or not, if you want to restore it later you can delete the file and start Vesktop to recreate it."
-    echo "4. Inject the content of 'vencordDesktopMain_sample.js' in your Vencord main file (usually located in '~/.config/Vencord/dist/vencordDesktopMain.js'):"
-    echo "    - UNIVERSAL METHOD (works with all Vencord versions): Insert the content of 'vencordDesktopMain_sample.js' just before the line '//# sourceURL='"
-    echo "    (*NOT RECOMMENDED to replace the whole file, as it may become obsolete with Vesktop updates*)"
-    echo "5. Make a dir 'vesktopCustomCommands' in your Vencord path (usually located in '~/.config/Vencord/dist/') and put the file 'customCode.js' in it."
-    echo "6. Make a dir '~/.vesktopCustomCommands' and put the files 'mute.sh' and 'deafen.sh' in it."
-    echo "7. Add permissions to the scripts 'mute.sh' and 'deafen.sh':"
-    echo "    chmod +x ~/.vesktopCustomCommands/mute.sh"
-    echo "    chmod +x ~/.vesktopCustomCommands/deafen.sh"
-    echo "8. Put the '.config' file in '~/.vesktopCustomCommands' and update the 'vencord_path' variable with your Vencord path if needed."
-    echo "9. Restart Vesktop to apply the changes."
-    echo "10. Configure a custom global shortcut in your system to call the scripts 'mute.sh' and 'deafen.sh' in '~/.vesktopCustomCommands/' folder."
-    echo "    - 'mute.sh' to mute yourself. '~/.vesktopCustomCommands/mute.sh'"
-    echo "    - 'deafen.sh' to deafen yourself. '~/.vesktopCustomCommands/deafen.sh'"
-    echo "11. Enjoy your new global shortcuts to mute and deafen yourself!"
-
+    echo "For a manual installation, please refer to the README.md file in the repository or follow the next steps:
+1. Download the 'dist' folder from the repository or its content.
+2. 'dist' is separated in two parts:
+    - 'vencord' folder contains the files to inject in the Vencord main file.
+    - 'vesktopCustomCommands' folder contains the scripts to mute/deafen and the '.config' file.
+3. You can make a backup of your Vencord main file (usually located in '~/.config/Vencord/dist/vencordDesktopMain.js' so 'cp ~/.config/Vencord/dist/vencordDesktopMain.js ~/.config/Vencord/dist/vencordDesktopMain.js.bak') or not, if you want to restore it later you can delete the file and start Vesktop to recreate it.
+4. Inject the content of 'vencordDesktopMain_sample.js' in your Vencord main file (usually located in '~/.config/Vencord/dist/vencordDesktopMain.js'):
+    - UNIVERSAL METHOD (works with all Vencord versions): Insert the content of 'vencordDesktopMain_sample.js' just before the line '//# sourceURL='
+    (*NOT RECOMMENDED to replace the whole file, as it may become obsolete with Vesktop updates*)
+5. Make a dir 'vesktopCustomCommands' in your Vencord path (usually located in '~/.config/Vencord/dist/') and put the file 'customCode.js' in it.
+6. Make a dir '~/.vesktopCustomCommands' and put the files 'mute.sh' and 'deafen.sh' in it.
+7. Add permissions to the scripts 'mute.sh' and 'deafen.sh':
+    chmod +x ~/.vesktopCustomCommands/mute.sh
+    chmod +x ~/.vesktopCustomCommands/deafen.sh
+8. Put the '.config' file in '~/.vesktopCustomCommands' and update the 'vencord_path' variable with your Vencord path if needed.
+9. Restart Vesktop to apply the changes.
+10. Configure a custom global shortcut in your system to call the scripts 'mute.sh' and 'deafen.sh' in '~/.vesktopCustomCommands/' folder.
+    - 'mute.sh' to mute yourself. '~/.vesktopCustomCommands/mute.sh'
+    - 'deafen.sh' to deafen yourself. '~/.vesktopCustomCommands/deafen.sh'
+11. Enjoy your new global shortcuts to mute and deafen yourself!
+"
     exit 0
 fi
 
-DEFAULT_VENCORD_PATH="~/.config/Vencord/dist/"
-VENCORD_PATH=$DEFAULT_VENCORD_PATH
-
-# Ask for validation of Vencord path
-read -p 'Is the path of Vencord of Vesktop "'${VENCORD_PATH}'"? (y/n) ' -n 1 -r
-echo    # move to a new line
-if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-    # Ask for the path of Vencord (with pre-filled "~/.config/Vencord/dist/" so the user don't have to re type it)
-    read -p 'Please enter the path of Vencord of Vesktop: ' -i "${VENCORD_PATH}" -e vencordPath
-    VENCORD_PATH=$vencordPath
+# Look up the Vencord files directory
+if [[ -d $(normalizePath "~/.config/Vencord/dist/") ]]; then
+    VENCORD_PATH="~/.config/Vencord/dist/"
+elif [[ -d $(normalizePath "~/.config/vesktop/sessionData/vencordFiles/") ]]; then
+    VENCORD_PATH="~/.config/vesktop/sessionData/vencordFiles/"
 fi
 
-# Check if the path exists
-if [ ! -d "$(normalizePath "$VENCORD_PATH")" ]; then
-    echo 'Error: The path "'${VENCORD_PATH}'" does not exist'
-    echo 'Trying with the default path "'${DEFAULT_VENCORD_PATH}'"...'
-    if [ ! -d "$(normalizePath "$DEFAULT_VENCORD_PATH")" ]; then
-        echo "Error: The default path ${DEFAULT_VENCORD_PATH} does not exist"
+echo  # Newline
+
+if [[ -n "${VENCORD_PATH}" ]]; then
+    echo "Detected Vencord files at ${VENCORD_PATH}"
+else
+    # Ask for the path of Vencord (with pre-filled "~/.config/Vencord/dist/" so the user don't have to re type it)
+    echo "Vencord files path couldn't be found automatically."
+    read -p "Please enter it manually: " -i "${VENCORD_PATH}" -e vencordPath
+    VENCORD_PATH="$(normalizePath "${vencordPath}")"
+
+    if [ ! -d "${VENCORD_PATH}" ]; then
+        echo 'Error: The path "'${VENCORD_PATH}'" does not exist'
         exit 1
-    else
-        echo 'Default path "'${DEFAULT_VENCORD_PATH}'" found!'
-        echo 'Using the default path "'${DEFAULT_VENCORD_PATH}'"'
-        VENCORD_PATH=$DEFAULT_VENCORD_PATH
     fi
 fi
 
-# Check if the path ends with a slash, if not, add it
-if [[ "$VENCORD_PATH" != */ ]]; then
+# Normalize the path
+VENCORD_PATH="$(normalizePath $VENCORD_PATH)"
+# And then check if the path ends with a slash, if not, add it
+if [[ "${VENCORD_PATH}" != */ ]]; then
     VENCORD_PATH="${VENCORD_PATH}/"
 fi
 
@@ -168,10 +167,10 @@ VENCORD_PATH_VCC="${VENCORD_PATH}vesktopCustomCommands/"
 VENCORD_MAIN_FILE="${VENCORD_PATH}vencordDesktopMain.js"
 VENCORD_VCC_CUSTOM_CODE_FILE="${VENCORD_PATH_VCC}customCode.js"
 
-VCC_PATH="$HOME/.vesktopCustomCommands/"
+VCC_PATH="${XDG_CONFIG_HOME:-$HOME/.config}/vesktopCustomCommands/"
 VCC_MUTE_PATH="${VCC_PATH}mute.sh"
 VCC_DEAFEN_PATH="${VCC_PATH}deafen.sh"
-VCC_CONFIG_PATH="${VCC_PATH}.config"
+VCC_CONFIG_PATH="${VCC_PATH}config"
 
 # SOURCE PATHS
 REPOSITORY_SOURCE="https://raw.githubusercontent.com/"

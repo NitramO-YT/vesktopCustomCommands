@@ -90,47 +90,48 @@ echo "This script will uninstall vesktopCustomCommands (VCC) from your system."
 read -p 'Do you want to proceed with the uninstallation? (y/n) ' -n 1 -r
 echo
 if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-    echo "For a manual uninstallation, please follow these steps:"
-    echo "1. Remove the custom global shortcuts in your system that call the scripts 'mute.sh' and 'deafen.sh' in '~/.vesktopCustomCommands/'."
-    echo "2. Remove the '.config' file located in '~/.vesktopCustomCommands/'."
-    echo "3. Remove the '~/.vesktopCustomCommands' folder."
-    echo "4. Remove the 'customCode.js' file from your Vencord path (usually '~/.config/Vencord/dist/vesktopCustomCommands/')."
-    echo "5. Remove the 'vesktopCustomCommands' folder from your Vencord path (usually '~/.config/Vencord/dist/')."
-    echo "6. Remove the injected code in your Vencord main file (usually '~/.config/Vencord/dist/vencordDesktopMain.js') or restore your backup."
-    echo "   Tip: you can also delete the main file and start Vesktop to recreate it automatically."
-    echo "7. Restart Vesktop to apply the changes."
-    echo "Note: If you had enabled auto-repatch/auto-update, you may also disable the user systemd timer with:"
-    echo "   systemctl --user disable --now vcc-autorepatch.timer"
-    echo "   systemctl --user disable --now vcc-autorepatch.service"
+    echo "For a manual uninstallation, please follow these steps:
+1. Remove the custom global shortcuts in your system that call the scripts 'mute.sh' and 'deafen.sh' in '~/.vesktopCustomCommands/'.
+2. Remove the '.config' file located in '~/.vesktopCustomCommands/'.
+3. Remove the '~/.vesktopCustomCommands' folder.
+4. Remove the 'customCode.js' file from your Vencord path (usually '~/.config/Vencord/dist/vesktopCustomCommands/').
+5. Remove the 'vesktopCustomCommands' folder from your Vencord path (usually '~/.config/Vencord/dist/').
+6. Remove the injected code in your Vencord main file (usually '~/.config/Vencord/dist/vencordDesktopMain.js') or restore your backup.
+   Tip: you can also delete the main file and start Vesktop to recreate it automatically.
+7. Restart Vesktop to apply the changes.
+Note: If you had enabled auto-repatch/auto-update, you may also disable the user systemd timer with:
+   systemctl --user disable --now vcc-autorepatch.timer
+   systemctl --user disable --now vcc-autorepatch.service"
     exit 0
 fi
 
-DEFAULT_VENCORD_PATH="~/.config/Vencord/dist/"
-VENCORD_PATH=$DEFAULT_VENCORD_PATH
-
-# Ask for validation of Vencord path
-read -p 'Is the path of Vencord for Vesktop "'${VENCORD_PATH}'"? (y/n) ' -n 1 -r
-echo
-if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-    read -p 'Please enter the path of Vencord for Vesktop: ' -i "${VENCORD_PATH}" -e vencordPath
-    VENCORD_PATH=$vencordPath
+# Look up the Vencord files directory
+if [[ -d $(normalizePath "~/.config/Vencord/dist/") ]]; then
+    VENCORD_PATH="~/.config/Vencord/dist/"
+elif [[ -d $(normalizePath "~/.config/vesktop/sessionData/vencordFiles/") ]]; then
+    VENCORD_PATH="~/.config/vesktop/sessionData/vencordFiles/"
 fi
 
-# Check path exists or fallback to default
-if [ ! -d "$(normalizePath "$VENCORD_PATH")" ]; then
-    echo 'Error: The path "'${VENCORD_PATH}'" does not exist'
-    echo 'Trying with the default path "'${DEFAULT_VENCORD_PATH}'"...'
-    if [ ! -d "$(normalizePath "$DEFAULT_VENCORD_PATH")" ]; then
-        echo "Error: The default path ${DEFAULT_VENCORD_PATH} does not exist"
+echo  # Newline
+
+if [[ -n "${VENCORD_PATH}" ]]; then
+    echo "Detected Vencord files at ${VENCORD_PATH}"
+else
+    # Ask for the path of Vencord (with pre-filled "~/.config/Vencord/dist/" so the user don't have to re type it)
+    echo "Vencord files path couldn't be found automatically."
+    read -p "Please enter it manually: " -i "${VENCORD_PATH}" -e vencordPath
+    VENCORD_PATH="$(normalizePath "${vencordPath}")"
+
+    if [ ! -d "${VENCORD_PATH}" ]; then
+        echo 'Error: The path "'${VENCORD_PATH}'" does not exist'
         exit 1
-    else
-        echo 'Default path found. Using it.'
-        VENCORD_PATH=$DEFAULT_VENCORD_PATH
     fi
 fi
 
-# Ensure trailing slash
-if [[ "$VENCORD_PATH" != */ ]]; then
+# Normalize the path
+VENCORD_PATH="$(normalizePath $VENCORD_PATH)"
+# And ensure trailing slash
+if [[ "${VENCORD_PATH}" != */ ]]; then
     VENCORD_PATH="${VENCORD_PATH}/"
 fi
 
@@ -139,7 +140,7 @@ VENCORD_PATH_VCC="${VENCORD_PATH}vesktopCustomCommands/"
 VENCORD_MAIN_FILE="${VENCORD_PATH}vencordDesktopMain.js"
 VENCORD_PRELOAD_FILE="${VENCORD_PATH}vencordDesktopPreload.js"
 
-VCC_PATH="$HOME/.vesktopCustomCommands/"
+VCC_PATH="${XDG_CONFIG_HOME:-$HOME/.config}/vesktopCustomCommands/"
 VCC_MUTE_PATH="${VCC_PATH}mute.sh"
 VCC_DEAFEN_PATH="${VCC_PATH}deafen.sh"
 VCC_CONFIG_PATH="${VCC_PATH}.config"
@@ -243,5 +244,3 @@ if [ "$REMOVE_SETTINGS" = true ]; then
 fi
 
 exit 0
-
-

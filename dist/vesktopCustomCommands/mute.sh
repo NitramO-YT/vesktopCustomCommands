@@ -15,11 +15,14 @@ normalizePath() {
 }
 
 # Define the base directory
-DEFAULT_BASE_DIR="$HOME/.config/Vencord/dist"
-VENCORD_PATH="$DEFAULT_BASE_DIR"
+if [[ -d $(normalizePath "~/.config/Vencord/dist/") ]]; then
+    VENCORD_PATH="~/.config/Vencord/dist/"
+elif [[ -d $(normalizePath "~/.config/vesktop/sessionData/vencordFiles/") ]]; then
+    VENCORD_PATH="~/.config/vesktop/sessionData/vencordFiles/"
+fi
 
 # Read .config file to get the Vencord path
-CONFIG_FILE="$(dirname "$0")/.config"
+CONFIG_FILE="$(dirname "$0")/config"
 if [ -f "$CONFIG_FILE" ]; then
     source "$CONFIG_FILE"
     VENCORD_PATH="$(normalizePath "$vencord_path")"
