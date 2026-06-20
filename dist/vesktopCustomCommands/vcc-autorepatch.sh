@@ -10,7 +10,7 @@ flock -n 9 || exit 0
 # Best-effort cleanup of the lock file when this process exits
 trap 'rm -f "$LOCK_FILE" >/dev/null 2>&1 || true' EXIT
 
-CONFIG="$HOME/.vesktopCustomCommands/.config"
+CONFIG="${XDG_CONFIG_HOME:-$HOME/.config}/vesktopCustomCommands/config"
 [ -f "$CONFIG" ] || exit 0
 # shellcheck disable=SC1090
 source "$CONFIG"

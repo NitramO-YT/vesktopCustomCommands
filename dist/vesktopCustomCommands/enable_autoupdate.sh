@@ -1,5 +1,5 @@
 #!/bin/bash
-CONFIG="$HOME/.vesktopCustomCommands/.config"
+CONFIG="${XDG_CONFIG_HOME:-$HOME/.config}/vesktopCustomCommands/config"
 [ -f "$CONFIG" ] || { echo "Config not found: $CONFIG"; exit 1; }
 
 # Ensure newline at EOF

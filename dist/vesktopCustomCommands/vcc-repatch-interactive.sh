@@ -1,5 +1,5 @@
 #!/bin/bash
-CONFIG="$HOME/.vesktopCustomCommands/.config"
+CONFIG="${XDG_CONFIG_HOME:-$HOME/.config}/vesktopCustomCommands/config"
 
 normalizePath() {
   local input_path="$1"

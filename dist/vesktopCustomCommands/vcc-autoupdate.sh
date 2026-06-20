@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-CONFIG="$HOME/.vesktopCustomCommands/.config"
+CONFIG="${XDG_CONFIG_HOME:-$HOME/.config}/vesktopCustomCommands/config"
 [ -f "$CONFIG" ] || exit 0
 # shellcheck disable=SC1090
 source "$CONFIG"

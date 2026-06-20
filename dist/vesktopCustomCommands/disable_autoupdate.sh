@@ -1,5 +1,5 @@
 #!/bin/bash
-CONFIG="$HOME/.vesktopCustomCommands/.config"
+CONFIG="${XDG_CONFIG_HOME:-$HOME/.config}/vesktopCustomCommands/config"
 [ -f "$CONFIG" ] || { echo "Config not found: $CONFIG"; exit 1; }
 sed -i -e 's|^auto_update=.*|auto_update="false"|' "$CONFIG"
 if command -v systemctl >/dev/null 2>&1; then
